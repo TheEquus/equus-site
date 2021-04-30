@@ -1,0 +1,68 @@
+#baseURL = "http://example.org/"
+languageCode = "en-us"
+title = "Equus 🐴 (Annie)"
+theme = "color-your-world"
+
+[params]
+  description = "Annie Nie's personal website \"full of\" personal projects and CTF writeups, where I try not to break things"
+  #media path technically, but who cares about the details
+  imgPath = "media"
+  url = "anniequus.com"
+[params.style]
+
+    # Dark mode as default
+    # User preferences (site/system settings) will still have priority over it
+    # The default is false
+    isDark = true
+
+    # Disable the use of system settings (prefers-color-scheme)
+    # The default is false
+    ignoreSystemSettings = true
+
+    # Accent colors for light and dark mode respectively
+    lightAccent  = "#225670" # Default is "#225670"
+    darkAccent   = "#63d954" # Default is "#dd587c"
+
+    presets = [ "#1f676b", "#f3a530", "#902b37", "#1dbc91", "#754e85", "#7fc121", "#a8314a", "#ff7433", "#3e6728", "#c063bd", "#dd587c" ]
+
+
+[params.imageProc]
+  highRes   = [ "1280x", "1280w" ]
+  mediumRes = [ "960x", "960w" ]
+  lowRes    = [ "640x q90", "640w" ]
+  # entry = [ resize options, condition ]
+
+  # Images with width equal or greater this value
+  # will be processed into the 3 resolutions above
+  # Valid only for images rendered via markdown
+  # The default value is 1280
+  markupAutoResizeWidth = 1280
+
+
+# basic 404 page
+[params.notFound]
+  title         = "404 Page not found"
+  description   = "This page was not found."
+  paragraph     = "Nothing around here. For all we know, it never even existed."
+
+[params.search]
+  enable = true
+  minLength = 1
+  maxLength = 40
+  placeholder = "Search..."
+
+[menu]
+  [[menu.main]]
+    name = "About"
+    weight = 1
+    url = "about/"
+
+    [[menu.main]]
+      name = "Posts"
+      weight = 1
+      url = "posts/"
+
+[params.social.centralized]
+  github    = ["TheEquus"]
+  linkedin  = ["annienie"]
+  twitter   = ["ThatEquus"]

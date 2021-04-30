@@ -1,0 +1,6 @@
+<!-- Default image path -->
+{{ $imgPath := .Page.Param "imgPath" }}
+
+{{ $file := index .Params 0 }}
+
+<img src="{{ path.Join $imgPath $file }}"/>
