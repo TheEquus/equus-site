@@ -12,6 +12,6 @@ The bass guitar boosted (because bass is cool) not final mix:
 {{< audioplayer "TWS_mix_but_bass_says_i_am_cooler_than_all_of_you_guys.mp3" >}}
 
 
-The final mix (on soundcloud)
-{{< soundcloud "1014211036" >}}
-The full line up can be seen on the soundcloud page of the track itself.
+The final mix (on bandcamp)
+{{< writhingsouth >}}
+The full line up can be seen on the bandcamp page of the track itself.
