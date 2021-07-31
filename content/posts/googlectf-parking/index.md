@@ -6,6 +6,8 @@ toc: true
 categories: ["CTF"]
 ---
 
+{{< img challenge.png >}}
+
 I unfortunately did not solve this during the competition period, but mildly obsessed over this for about a week after the competition. Here's how I lost way too many hours of sleep.  
 
 TL;DR - Realise this was all just [one big digital logic circuit](#diving-deeper), recognise the different [logic gates and connections](#junction-types), [build it all](#building-with-verilog) in Verilog, solve with some [ModelSim bruteforcing](#writing-the-testbench), and get enough sleep.
