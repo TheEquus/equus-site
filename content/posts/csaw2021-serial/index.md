@@ -1,5 +1,5 @@
 ---
-title: "\"Oh yeah Motorola exists\" - The major revelation in CSAW CTF 2021"
+title: "\"Oh yeah Motorola exists\" - Revelations made in CSAW CTF 2021"
 date: 12 Sep 2021
 draft: false
 toc: true
@@ -18,11 +18,11 @@ The challenge gives us two .sal files, and based solely on the challenge descrip
 ### key.sal
 First, we'll take a look at key.sal, and see what we can get.  
 {{< img KeyObserve.png >}}  
-There are only two channels to look at, and given that one channel (channel 0 in white) seems to have pretty consistent rises and falls, it's easy to say that this is the clock. Leaving channel 1 (the orange channel) to be the data channel we need to collect. Thankfully, figuring out which protocol could be used isn't too difficult given this information, and just a casual click through all the possible analysers Saleae provides, leads us to I2C being the best candidate for this capture.
+There are only two channels to look at, and given that one channel (channel 0 in white) seems to have pretty consistent rises and falls, it's safe to say that this is the clock. Leaving channel 1 (the orange channel) to be the data channel we need to collect. Thankfully, figuring out which protocol could be used isn't too difficult given this information, and just a casual click through all the possible analysers Saleae provides, leads us to I2C being the best candidate for this capture.
 {{< img KeySettings.png >}}  
 Here we have assigned our clock (SCL) to channel 0, and data (SDA) to channel 1.  
 {{< img KeyAnalyse.png >}}
-Applying those settings gives us the following data.
+Applying those settings gives us the the above.
 {{< img I2CTI.png >}}  
 Even though it's not strictly necessary to know much/anything about I2C, here's a great diagram from [Texas Instruments](https://www.ti.com/lit/an/slva704/slva704.pdf) that matches what we see in the capture. We can see that SCL is broken into groups of 9 periods (rise and fall of the clock), which matches to I2C's 8 bits of data, plus an acknowledge bit (each period of the clock transmits one bit).  
 Looking at the output terminal of the analyser, we get the following information:   
@@ -98,7 +98,7 @@ S|1|1B|064C|9949000060000000397F003083EBFFFC7D615B784E800020|60
 S|5|03|---|000C|F0  
 
 Now to analyse what each record means. Thankfully it's quite simple:  
-- `S5` we can just ignore, since it only tells us how many S1/2/3 records there are (those records are actual data records).    
+- `S5` we can just ignore, since it only tells us how many S1/2/3 records there are (basically number of data records).    
 - As mentioned above, `S1` and `S2` are data records, the only difference is that S2's address size is 6 bytes.
 - `S0` is very helpful, as they're header records. It tells us information about each block. Given that each S0 record's data field looks very ASCII like, let's decode:    
   - Block 1: `Local Key`  
@@ -108,8 +108,8 @@ Now to analyse what each record means. Thankfully it's quite simple:
 Very intriguing. There seems to be another key (that's separate to the key we got from key.sal), so we'll set that aside and take a look at block 2. It looks like there'll be at least a little PowerPC fun! Good thing I know a creature that knows PowerPC.
 ## The programming-y bits
 ### Loading up Ghidra
-Now, reversing the hex codes to the appropriate machine code instructions would be, to put it simply, complete insanity. Luckily Ghidra can help with not just the disassembly, but also the decompilation. This allows us to deal with PowerPC with little to no PowerPC knowledge.  
-Given that I know basically nothing about PowerPC, the decompiler thankfully gives plenty of information as to what's going on (with some variable names changed):  
+Now, reversing the hex codes to the appropriate machine code instructions by hand would be, to put it simply, complete insanity. Luckily Ghidra can help with not just the disassembly, but also the decompilation. This allows us to deal with PowerPC with little to no PowerPC knowledge.  
+Given that I know basically nothing about PowerPC, the decompiler thankfully gives plenty of information as to what's going on (I've changed some variable names):  
 ```C
 void UndefinedFunction_00000000(int param_1,int param_2)
 
@@ -155,7 +155,7 @@ for i in range(29):
 
 print(flag)
 ```
-Either way, we finally get the flag we're after!  
+In the end, we finally get the flag we're after!  
 ```
 Flag: flag{s3r14l_ch4ll3ng3_s0lv3r}
 ```
