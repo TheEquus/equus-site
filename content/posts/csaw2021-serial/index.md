@@ -1,6 +1,6 @@
 ---
 title: "\"Oh yeah Motorola exists\" - Revelations made in CSAW CTF 2021"
-date: 12 Sep 2021
+date: 21 Sep 2021
 draft: false
 toc: true
 categories: ["CTF"]
@@ -9,7 +9,7 @@ categories: ["CTF"]
 
 A mildly interesting challenge that touches (very briefly) on serial communication. But given that the files are .sal files, we can use the trusty old Saleae's logic analyser to help decode everything.
 
-TL;DR: Use Saleae to [extract information](#extraction),[ be reminded that Motorola exists](#research) and created S-records, [break the information down](#apply), [use Ghidra](#loading-up-ghidra) to disassemble and decompile the machine code, and [make sense of everything](#trust-the-python) to eventually obtain the flag.
+TL;DR: Use Saleae to [extract information](#extraction), [be reminded that Motorola exists](#research) and created S-records, [break the information down](#apply), [use Ghidra](#loading-up-ghidra) to disassemble and decompile the machine code, and [make sense of everything](#trust-the-python) to eventually obtain the flag.
 
 ## Introduction
 The challenge gives us two .sal files, and based solely on the challenge description, capture.sal gives us a function block, and key.sal gives us a key of some kind. This seems pretty straight forward, so time to get on extracting.
