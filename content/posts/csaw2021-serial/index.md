@@ -65,9 +65,9 @@ S503000CF0
 ```
 
 ## What in the world are all these S's  
-This looks very similar to [Intel's hex format](https://en.wikipedia.org/wiki/Intel_HEX) (.hex files), which essentially allows for machine code to be written into a chip's ROM. However, instead of semicolons, there are S's. This calls for a round of intense searching.
+This looks very similar to [Intel's hex format](https://en.wikipedia.org/wiki/Intel_HEX) (.hex files), which essentially allows for machine code to be written into a chip's ROM. However, instead of semicolons, there are S's in this case, which is very much not Intel hex-like. This calls for a round of intense searching.
 ### Research  
-Whip out the keyboard, it's time to search the internet for what these two blocks really are. Searching up `s instead of semicolon hex file` gives a couple sites mentioning "S-records", which is very promising. However, if you're feeling efficient, `S hex files` will present the wikipedia page for S-records (originally created by Motorola!). Taking a look at [SREC](https://en.wikipedia.org/wiki/SREC_(file_format)) confirms that we've hit the jackpot. After spending some moments reminiscing about some [great old Motorola phones](https://en.wikipedia.org/wiki/Motorola_Razr), we can wipe off that sweat from the heavy round of researching, because now we'll apply our new found knowledge to the two blocks.  
+Whip out the keyboard, it's time to search the internet for what these two blocks really are. Searching up `s instead of semicolon hex file` gives a couple sites mentioning "S-records", which is very promising. However, if you're feeling efficient, `S hex files` will present the wikipedia page for S-records (originally created by Motorola!). Taking a look at [SREC](https://en.wikipedia.org/wiki/SREC_(file_format)) confirms that we've hit the jackpot. After spending quite a bit of time reminiscing about some [great old Motorola phones](https://en.wikipedia.org/wiki/Motorola_Razr), we can wipe off that sweat from the heavy round of researching, because now we'll apply our new found knowledge to the two blocks.  
 ### Apply
 {{< img SRECStruct.png >}}
 Based on the record structure shown, we can break each block into the appropriate records, and work from there:

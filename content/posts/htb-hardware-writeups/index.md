@@ -23,9 +23,9 @@ So, the proper way to do this would be to measure the smallest time between a ri
 Upon exporting the results (and running a quick script to collect just the data we want), we can see that there's a whole bunch of "Connection From" repeated, until we hit an error.
 {{< img SerialLogsError.png >}}
 
-The gibberish must because of a baud rate change (change of bitrate). So looks like we'll have to calculate the bitrate of the second half. Given that the first half had a bitrate of 115200, and the smallest gap between the rise and fall of a signal is roughly 8.5us, we can approximate the bitrate by doing: 1/0.0000085s (8.5us = 0.0000085s), or more generally 1/gap.  
+The gibberish must be because of a baud rate change (change of bitrate). So looks like we'll have to calculate the bitrate of the second half. Given that the first half had a bitrate of 115200, and the smallest gap between the rise and fall of a signal is roughly 8.5us, we can approximate the bitrate by doing: 1/0.0000085s (8.5us = 0.0000085s), or more generally 1/gap.  
 So with this we can simply measure the smallest gap in the second half of the capture (~13.5us), throw that into the formula, and get an approximate bitrate (~74000 bits/s). Although it may not be the exact bitrate used, it was accurate enough to work in this case.
-Using a simple script to grab all the data:
+Exporting the resulting data, and using a simple script to grab all the data:
 ```Python
 import csv
 
@@ -44,7 +44,7 @@ we can get the flag that we need!
 
 [Download the challenge](https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_compromised.zip)
 
-Here we see the challenge description talk about serials and slaves, and not the illegal kind. Masters and slaves in the context of chips is a reference to I2C, which is essentially a type of communication specially designed for two chips to talk with each other.
+Here we see the challenge description talk about serial and slaves, and not the illegal kind. Masters and slaves in the context of chips is a reference to I2C, which is essentially a type of communication specially designed for two chips to talk with each other.
 
 Knowing this, we can skip some of the information on how I2C works, and load Saleae's handy I2C analyser and see what outputs we get. All we need to notice is that one of the channels has distinctly clock like features, so we can set that as our SCL. Leaving our other channel as the SDA.
 
@@ -125,11 +125,11 @@ Taking a look at what each pin means and is actually doing, we get the following
 Great, since we know that data is being written to the display (GDDRAM) we could probably try to find a way to emulate the screen, but how can we do that? Let's keep reading the datasheet.
 
 {{< img OffTheGridMCUInterface.png >}}
-Based on this bit of the datasheet, we can deduce that the data transfer that has been captured is using 4-wire SPI. We know this because we have SDIN, (S)CLK, CS, D/C and RES. The `Tie LOW` just means we can ignore those pins/signals.
+Based on this bit of the datasheet, we can deduce that the data transfer that has been captured is using 4-wire SPI. We know this because we have SDIN, (S)CLK, CS, D/C and RES. The `Tie LOW` and `NC` just means we can ignore those pins/signals.
 
-Sweet, now that we know what protocol is being used, we just need to figure out how to deal with the data being sent to GDDRAM. For now, we can ignore the commands, since there are a lot of them in the datasheet, and at this stage there is no easy way to decode each command.
+Sweet, now that we know what protocol is being used, we just need to figure out how to deal with the data being sent to GDDRAM. For now, we can ignore the commands (when D/C is low), since there are a lot of them in the datasheet, and at this stage there is no easy way to decode each command.
 
-Whilst casually reading the datasheet, we hit the jackpot, some info on how the GDDRAM actually works.
+Casually reading the datasheet, we hit the jackpot, some info on how the GDDRAM actually works.
 {{< img OffTheGridGDDRAM.png >}}
 {{<img OffTheGridGDDRAMEnlarge.png >}}
 
@@ -316,7 +316,7 @@ Unlike the other hardware challenges, this not only didn't involve Saleae, but a
 Despite a lot of begging and pleading, there didn't seem to be any way past the authentication on the AppWeb panel.
 
 As it turns out, the entirety of the authentication can by bypassed given that we know the username. A step by step walkthrough of how it works can be found [here](https://lab.wallarm.com/can-your-printer-hack-your-secrets-appweb-authorization-bypass-c609cf9024a7/) and the exploit script with a basic description behind the CVE can be seen [here](https://vulners.com/seebug/SSV:97181).
-But to summarise the issue, whilst the username and password is checked when the authentication type is set to "basic", if the http headers being sent to the server had the authentication type changed to either "digest" or "form", only the username is checked. Using this exploit (with the help of the [exploit script](#python-3-ified-exploit-script-to-bypass-authentication)) and guessing that the username was "admin" (because why wouldn't you have that as the username), we finally get access to the AppWeb panel.
+But to summarise the issue, whilst the username and password is checked when the authentication type is set to "basic", if the http headers being sent to the server had the authentication type changed to either "digest" or "form", only the username is checked. Using this exploit (with the help of an [exploit script](#python-3-ified-exploit-script-to-bypass-authentication)) and guessing that the username was "admin" (because why wouldn't you have that as the username), we finally get access to the AppWeb panel.
 
 {{< img "DiscoveryLoggedIn.png" >}}
 

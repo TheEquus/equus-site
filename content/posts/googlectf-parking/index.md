@@ -21,7 +21,7 @@ Well this doesn't seem too bad... We're told (in the command line) that the goal
 
 ### Level 2
 {{< img level2.png >}}
-Well... I can almost see my life flashing before my eyes. Solving this through the matplotlib graph it creates would be a pain (especially given that it took about a minute to load the graph itself). Clearly, we need to analyse how it's getting the map.
+Well... I can almost see my life flashing before my eyes. Solving this through the matplotlib graph it creates would be a pain (especially given that it took about a minute for matplotlib to load the graph itself). Clearly, we need to analyse how it's getting the map.
 
 ## Analysis
 Let's take a look at the [game.py](https://github.com/google/google-ctf/blob/master/2021/quals/hw-parking/attachments/game.py) script first.  
@@ -40,7 +40,7 @@ Whilst we have a general idea of how everything works, how in the world do we ap
 {{< img grepmylife.png >}}
 Doing a quick grep on the level2 file (based on -1 == green block, and -2 == red block), we can see that there are a lot of green blocks (64 in fact) all in a vertical line, and one singular red block in a tiny corner. We know this, as the python script parses the file info as (x,y,w,h,movable). On top of that, the green blocks are added to the flagblocks array from top to bottom, meaning the top most green block represents bit 0, and the bottom most green block represents bit 63.
 
-Time to zoom in even more! Luckily the python script uses PIL to copy the graph onto a png, so we won't have to deal with the 10 seconds it takes for matplotlib to zoom in.
+Time to zoom in even more! Luckily the python script uses PIL to save the graph as a png, so we won't have to deal with the 10 seconds it takes for matplotlib to zoom in.
 {{< img carspotting.png >}}
 The scariest thing about this, is that this is only a small section of the whole bigger picture. Anyone hoping to somehow solve this by hand ought to be reported for insanity.
 {{< img freeredcar.png >}}
@@ -73,7 +73,7 @@ Takes in one input, and splits it into two: essentially clones an input.
 
 ### Block A
 {{< img blocka.png >}}
-If we let the flow of the gap go from left to right in this image (following the rough direction of the red arrows), we can simplify this block down to a simple logic circuit. As it turns out, the "4 inputs" are actually only 2 inputs, as one is always the reverse of the other. Even better, the "2 outputs" is only 1 output, as `not(A xor B)` is the opposite of `A xor B`.
+If we let the flow of the gap go from left to right in this image (following the rough direction of the red arrows), we can simplify this block down to a simple logic circuit. As it turns out, the "4 inputs" can be treated as 2 inputs, as one is always the reverse of the other. Even better, the "2 outputs" can also be seen as only 1 output, as `not(A xor B)` is the opposite of `A xor B`.
 
 ### Block B
 {{< img blockb.png >}}
@@ -119,7 +119,7 @@ There seem to be extra unknown variables in the above connection rules. Clearly 
 ## Building with Verilog
 Very smart CTF professionals would resort to [Z3](https://theory.stanford.edu/~nikolaj/programmingz3.html) or any other [SMT/SAT](https://en.wikipedia.org/wiki/Satisfiability_modulo_theories) solver. So naturally I decided to turn to Verilog instead.  
 
-Verilog is a hardware description language that models electronic systems. In this case, we can use it to describe the digital circuit we're given, and then hopefully find a way to determine the correct input in order to make that red block move. Given that each block can be modelled as a logic gate, we can treat each block as its own module, where it has 2 inputs, and either one or two outputs.
+Verilog is a hardware description language that can be used to model electronic systems. In this case, we can use it to describe the digital circuit we're given, and then hopefully find a way to determine the correct input in order to make that red block move. Given that each block can be modelled as a logic gate, we can treat each block as its own module, where it has 2 inputs, and either one or two outputs.
 
 ```verilog
 module lil_xor(input A,B, output out_xor);
@@ -241,7 +241,7 @@ Now this is more like it. Now we just need to find the sweet spot of a reasonabl
 Looking at the Verilog implementation of the digital circuit, we can see that some inputs depend on `outj[i-1]` or `outj[i+1]`. Since the output blocks "cascade" (output of first block flows onto second, which flows onto the third block etc.), we can determine just how many neighbours a change in bit i affects.
 
 {{< img biteffect.png >}}
-The above shows roughly how a change in a bit affects the neighbours. Blocks 2, 3 and 6 rely on the output of a block on the previous row - e.g. Row 5 block 2 relies on the output of Row 4 block 1. On the other hand, blocks 4 and 5 rely on the output of a block on the next row - e.g. Row 5 block 4 relies on the output of Row 6 block 3. Note how block j on row i only relies on block j-1.
+The above shows roughly how a change in a bit affects the neighbours. Blocks 2, 3 and 6 rely on the output of a block on the previous row - e.g. Row 5 block 2 relies on the output of Row 4 block 1. On the other hand, blocks 4 and 5 rely on the output of a block on the next row - e.g. Row 5 block 4 relies on the output of Row 6 block 3. Note how block j on row i only relies on block j-1 (and never block j+1).
 {{< img bitouteffect.png >}}
 What all this essentially means is that if we're working from index 0 to index 63, if the output bits from 0 to m are all 1's, then bits 0 to m-3 are all correct.  
 If we're working from index 63 to index 0, and the output bits are all 1's from 63 to n, then that means all bits from 63 until n+2 are correct.
