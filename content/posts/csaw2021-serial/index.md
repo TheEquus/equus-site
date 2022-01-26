@@ -7,7 +7,7 @@ categories: ["CTF"]
 cover: "cover.jpg"
 description: "A writeup on a serial challenge in CSAW CTF 2021"
 ---
-{{< img ChallInfo.png >}}
+{{< img ChallInfo.png "Challenge info">}}
 
 A mildly interesting challenge that touches (very briefly) on serial communication. But given that the files are .sal files, we can use the trusty old Saleae's logic analyser to help decode everything.
 
@@ -19,26 +19,26 @@ The challenge gives us two .sal files, and based solely on the challenge descrip
 ## Extraction
 ### key.sal
 First, we'll take a look at key.sal, and see what we can get.  
-{{< img KeyObserve.png >}}  
+{{< img KeyObserve.png "Lots of squiggly lines from saleae">}}  
 There are only two channels to look at, and given that one channel (channel 0 in white) seems to have pretty consistent rises and falls, it's safe to say that this is the clock. Leaving channel 1 (the orange channel) to be the data channel we need to collect. Thankfully, figuring out which protocol could be used isn't too difficult given this information, and just a casual click through all the possible analysers Saleae provides, leads us to I2C being the best candidate for this capture.
-{{< img KeySettings.png >}}  
+{{< img KeySettings.png "Setting for I2C extraction">}}  
 Here we have assigned our clock (SCL) to channel 0, and data (SDA) to channel 1.  
-{{< img KeyAnalyse.png >}}
+{{< img KeyAnalyse.png "More squiggly lines, but with careful analysis">}}
 Applying those settings gives us the the above.
-{{< img I2CTI.png >}}  
-Even though it's not strictly necessary to know much/anything about I2C, here's a great diagram from [Texas Instruments](https://www.ti.com/lit/an/slva704/slva704.pdf) that matches what we see in the capture. We can see that SCL is broken into groups of 9 periods (rise and fall of the clock), which matches to I2C's 8 bits of data, plus an acknowledge bit (each period of the clock transmits one bit).  
+{{< img I2CTI.png "Texas Instruments documentation about I2C">}}  
+Even though it's not strictly necessary to know much/anything about I2C, here's a great diagram from {{< externalLink "Texas Instruments" "https://www.ti.com/lit/an/slva704/slva704.pdf" >}} that matches what we see in the capture. We can see that SCL is broken into groups of 9 periods (rise and fall of the clock), which matches to I2C's 8 bits of data, plus an acknowledge bit (each period of the clock transmits one bit).  
 Looking at the output terminal of the analyser, we get the following information:   
 `read to 0x08 ack data: 0x59 0x57 0x72 0x31 0x79 0xCE 0x94 0x8D 0x15 0xD4 0x54 0x02 0x7C 0x5C 0xA0 0x83 0x3D 0xAC 0xB7 0x2A 0x17 0x67 0x76 0x38 0x98 0x8F 0x69 0xE8 0xD0`  
 Since there isn't anything that can be done to these hex strings, it's probably safe to assume that's all for now regarding key.sal - onwards to capture.sal!
 
 ### capture.sal
-{{< img CaptureOverview.png >}}  
+{{< img CaptureOverview.png "Extremely zoomed out squiggly lines from saleae">}}  
 Giving the capture a look, there are clearly two blocks of information being sent. Since this capture uses the same number of channels, and each channel has the same behaviour across the two blocks, it's safe to assume the same protocol is being used within this capture. Given that there are more than 2 channels, we can rule out I2C. We just need a closer look at what's going on in each channel.  
-{{< img CaptureProtocol.png >}}
+{{< img CaptureProtocol.png "Zoomed in version of the zoomed out squiggly lines">}}
 Upon closer inspection, we can see a good amount of squiggly lines. Just from the image alone, we can see that channel 0 is probably a clock, channel 1 is some enable line (active low), channel 3 is data, and channel 2 is dead to us. Now some amount of scrolling through Saleae's logic analyser will lead us to SPI.  
-{{< img CaptureSettings.png >}}  
-Based on the information we do have, we can plug them into the settings for SPI. Again, knowing SPI in detail is not necessary, but a [here's a great video](https://www.youtube.com/watch?v=MCi7dCBhVpQ) on the basics of SPI.  
-{{< img CaptureHex.png >}}  
+{{< img CaptureSettings.png "SPI settings">}}  
+Based on the information we do have, we can plug them into the settings for SPI. Again, knowing SPI in detail is not necessary, but a {{< externalLink "here's a great video" "https://www.youtube.com/watch?v=MCi7dCBhVpQ" >}} on the basics of SPI.  
+{{< img CaptureHex.png "Hex output of squiggly lines">}}  
 Taking a look at the analyser's output table, we can see that the data (miso in my case) seems quite ASCII like. There are many useless facts stored in my brain, and knowing that 0x30-0x39 represents numbers 0-9 is one of them. So converting all the hex to ASCII output, gives us the following:  
 
 Block 1:
@@ -67,11 +67,11 @@ S503000CF0
 ```
 
 ## What in the world are all these S's  
-This looks very similar to [Intel's hex format](https://en.wikipedia.org/wiki/Intel_HEX) (.hex files), which essentially allows for machine code to be written into a chip's ROM. However, instead of semicolons, there are S's in this case, which is very much not Intel hex-like. This calls for a round of intense searching.
+This looks very similar to {{< externalLink "Intel's hex format" "https://en.wikipedia.org/wiki/Intel_HEX" >}} (.hex files), which essentially allows for machine code to be written into a chip's ROM. However, instead of semicolons, there are S's in this case, which is very much not Intel hex-like. This calls for a round of intense searching.
 ### Research  
-Whip out the keyboard, it's time to search the internet for what these two blocks really are. Searching up `s instead of semicolon hex file` gives a couple sites mentioning "S-records", which is very promising. However, if you're feeling efficient, `S hex files` will present the wikipedia page for S-records (originally created by Motorola!). Taking a look at [SREC](https://en.wikipedia.org/wiki/SREC_(file_format)) confirms that we've hit the jackpot. After spending quite a bit of time reminiscing about some [great old Motorola phones](https://en.wikipedia.org/wiki/Motorola_Razr), we can wipe off that sweat from the heavy round of researching, because now we'll apply our new found knowledge to the two blocks.  
+Whip out the keyboard, it's time to search the internet for what these two blocks really are. Searching up `s instead of semicolon hex file` gives a couple sites mentioning "S-records", which is very promising. However, if you're feeling efficient, `S hex files` will present the wikipedia page for S-records (originally created by Motorola!). Taking a look at [SREC](https://en.wikipedia.org/wiki/SREC_(file_format)) confirms that we've hit the jackpot. After spending quite a bit of time reminiscing about some {{< externalLink "great old Motorola phones" "https://en.wikipedia.org/wiki/Motorola_Razr" >}}, we can wipe off that sweat from the heavy round of researching, because now we'll apply our new found knowledge to the two blocks.  
 ### Apply
-{{< img SRECStruct.png >}}
+{{< img SRECStruct.png "Wikipedia extract about S Records structure">}}
 Based on the record structure shown, we can break each block into the appropriate records, and work from there:
 
 Block 1:  

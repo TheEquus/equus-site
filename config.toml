@@ -20,5 +20,8 @@ title = "Equus 🐴 (Annie)"
       url = "posts/"
 
 [sitemap]
-changefreq = "weekly"
-filename = "sitemap.xml"
+  changefreq = "weekly"
+  filename = "sitemap.xml"
+
+[params.colours]
+  darkerBackground = "#202925"

@@ -1,7 +1,7 @@
 {{ $file := index .Params 0}}
-{{ $imgPath := .Page.Param "imgPath"}}
+{{ $mediaPath := .Page.Param "mediaPath"}}
 
 <audio controls>
-  <source src="{{ path.Join $imgPath $file }}" type="audio/mp3">
+  <source src="{{ path.Join $mediaPath $file }}" type="audio/mp3">
   If you see this (without inspecting source), audio tags don't seem to work on your browser mate.
 </audio>
