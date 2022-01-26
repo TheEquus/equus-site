@@ -1,4 +1,4 @@
 <!-- Preload fonts  -->
 {{- range (resources.Match "fonts/*") -}}
-  <link rel="preload" href="{{ .RelPermalink }}" as="font" crossorigin="anonymous">
+  <link rel="preload" href="{{ .Permalink }}" as="font" crossorigin="anonymous">
 {{ end -}}

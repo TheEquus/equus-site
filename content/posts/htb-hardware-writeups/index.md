@@ -4,6 +4,7 @@ date: 26 Apr 2021
 draft: false
 toc: true
 categories: ["CTF"]
+description: "A collection of writeups for all the hardware challenges in HackTheBoxCTF 2021"
 ---
 
 This will be a writeup of all the hardware challenges in HackTheBoxCTF 2021. Although half the challenges in the category was just figuring out the protocol used, there were some interesting lessons learned.

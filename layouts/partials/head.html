@@ -1,3 +1,21 @@
-{{ partialCached "preload-fonts" .}}
+<meta charset='utf-8'>
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="description" content="{{ .Params.description }}">
+<!-- Open Graph things -->
+<meta property="og:title" content="{{ .Title }}">
+<meta property="og:description" content="{{ .Params.description }}">
+{{if .Params.cover }}
+{{ $mediaPath := path.Join .Permalink (.Page.Param "mediaPath") }}
+{{ $cover := path.Join $mediaPath .Params.cover }}
+<meta property="og:image" content="{{ $cover }}">
+{{ end }}
+<meta property="og:url" content="{{ .Permalink }}">
 
+{{ partialCached "preload-fonts" .}}
 {{ partialCached "preload-css" .}}
+
+<title>{{ .Title }}</title>
+
+<!-- Main JS -->
+{{ $main := resources.Get "js/main.js" | resources.ExecuteAsTemplate "js/main.js" . | minify | fingerprint }}
+<script src="{{ $main.Permalink }}" integrity="{{ $main.Data.Integrity }}" crossorigin="anonymous"></script>
