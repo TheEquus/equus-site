@@ -7,7 +7,7 @@ categories: ["CTF"]
 cover: "cover.jpg"
 description: "A quick writeup on substitution 1 - a crypto challenge from DUCTF 2021"
 ---
-{{< img chall.png >}}
+{{< img chall.png "Challenge info">}}
 Who knew I'd be writing a crypto writeup.
 
 ## The Beginning
@@ -25,7 +25,7 @@ FLAG = open('./flag.txt', 'rb').read().strip()
 enc = encrypt(FLAG, f)
 print(enc)
 ```
-{{< img CipherText.png >}}
+{{< img CipherText.png "Hex output of cipher text">}}
 That's some messy looking cipher text...
 
 ### Understanding the sage
@@ -48,7 +48,7 @@ Now that's much better. Now to simply reverse the values and ...
 ## Oh no
 ### An unnatural call
 I then felt a disturbance in the air. My computer was absorbed by a bright, blinding light. When my senses recovered I saw this:
-{{< img Matlab.png >}}
+{{< img Matlab.png "Be thankful you aren't seeing MATLAB blinding your eyes with their very white UI">}}
 I guess I have no choice now. The call of engineers can not be ignored.
 
 ### An unholy solve  

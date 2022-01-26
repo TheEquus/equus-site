@@ -12,17 +12,17 @@ This will be a writeup of all the hardware challenges in HackTheBoxCTF 2021. Alt
 ## The Basics
 The first three challenges (which I'll just call the basics) were best for getting used to using Saleae, its analysers, and getting a basic understanding of the protocols. This is where the heavy reliance on Saleae (logic analyser alpha) begins.
 ### Serial Logs
-{{< img "SerialLogsDescription.png" >}}  
+{{< img "SerialLogsDescription.png" "Challenge info for Serial Logs">}}  
 
-[Download the challenge](https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_serial_logs.zip)
+{{< externalLink "Download the challenge" "https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_serial_logs.zip" >}}
 
 We start off with a simple capture. Two channels, one is always high, and the other has both high and low signals. Based solely on the challenge title, we have serial data coming in, and given that there is no clock, we know we're dealing with asynchronous serial data. Now because we don't have a clock, we need to find the bitrate, which tells us to sample x bits every second.  
 
-So, the proper way to do this would be to measure the smallest time between a rise and fall of a signal, then calculate the bit rate using that. But the issue was that I wasn't aware of that at the time, and I just blindly guessed bitrates initially (well, blindly with the help of a [guide](https://www.engineersgarage.com/raspberrypi/raspberry-pi-serial-communication-uart-protocol-ttl-port-usb-serial-boards/)). But after cycling through those guesses, we get some promising data with bitrate = 115200.
-{{< img SerialLogsPromising.png >}}
+So, the proper way to do this would be to measure the smallest time between a rise and fall of a signal, then calculate the bit rate using that. But the issue was that I wasn't aware of that at the time, and I just blindly guessed bitrates initially (well, blindly with the help of a {{< externalLink "guide" "https://www.engineersgarage.com/raspberrypi/raspberry-pi-serial-communication-uart-protocol-ttl-port-usb-serial-boards/" >}}). But after cycling through those guesses, we get some promising data with bitrate = 115200.
+{{< img SerialLogsPromising.png "Serial Settings">}}
 
 Upon exporting the results (and running a quick script to collect just the data we want), we can see that there's a whole bunch of "Connection From" repeated, until we hit an error.
-{{< img SerialLogsError.png >}}
+{{< img SerialLogsError.png "Serial looks promising until it doesn't">}}
 
 The gibberish must be because of a baud rate change (change of bitrate). So looks like we'll have to calculate the bitrate of the second half. Given that the first half had a bitrate of 115200, and the smallest gap between the rise and fall of a signal is roughly 8.5us, we can approximate the bitrate by doing: 1/0.0000085s (8.5us = 0.0000085s), or more generally 1/gap.  
 So with this we can simply measure the smallest gap in the second half of the capture (~13.5us), throw that into the formula, and get an approximate bitrate (~74000 bits/s). Although it may not be the exact bitrate used, it was accurate enough to work in this case.
@@ -41,15 +41,15 @@ print(output)
 we can get the flag that we need!
 `CHTB{wh47?!_f23qu3ncy_h0pp1n9_1n_4_532141_p2070c01?!!!52}`
 ### Compromised
-{{< img CompromisedDescription.png >}}  
+{{< img CompromisedDescription.png "Challenge info for compromised">}}  
 
-[Download the challenge](https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_compromised.zip)
+{{< externalLink "Download the challenge" "https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_compromised.zip" >}}
 
 Here we see the challenge description talk about serial and slaves, and not the illegal kind. Masters and slaves in the context of chips is a reference to I2C, which is essentially a type of communication specially designed for two chips to talk with each other.
 
 Knowing this, we can skip some of the information on how I2C works, and load Saleae's handy I2C analyser and see what outputs we get. All we need to notice is that one of the channels has distinctly clock like features, so we can set that as our SCL. Leaving our other channel as the SDA.
 
-{{< img CompromisedOutData.png >}}
+{{< img CompromisedOutData.png "Output data featuring hex">}}
 Looking at our output, we see that a lot of data is being written to 0x34, but some of them are being written to 0x2C. That seems quite suspicious, so let's use a python script to take a look at what's happening there. (Note that the format is in: Time - ID - Address - Data - Read/Write - ACK/NAK)
 
 ```python
@@ -71,11 +71,11 @@ Running the script, we get the flag!
 `CHTB{nu11_732m1n47025_c4n_8234k_4_532141_5y573m!@52)#@%}`
 
 ### Secure
-{{< img SecureDescription.png >}}  
+{{< img SecureDescription.png "Challenge info for Secure">}}  
 
-[Download the challenge](https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_secure.zip)
+{{< externalLink "Download the challenge" "https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_secure.zip" >}}
 
-Based on the challenge description mentioning microSD cards, we can guess that the SPI protocol is being used (as both [SD and microSD cards use it](https://en.wikipedia.org/wiki/SD_card#Transfer_modes)).
+Based on the challenge description mentioning microSD cards, we can guess that the SPI protocol is being used (as both {{< externalLink "SD and microSD cards use it" "https://en.wikipedia.org/wiki/SD_card#Transfer_modes" >}}).
 
 Upon opening the capture, we see 4 channels. Channels 0 and 1 seem to be our data in, and Channel 3 is very clearly a clock. Meaning Channel 2 is the enable line, telling us when to sample the data from Channel 0 and 1. Since we have 2 channels that seem to be giving us data, we'll export all that info (as hex bytes), and run it through a simple python script.
 
@@ -103,18 +103,18 @@ And just like that, we get our flag!
 The next three were building on using protocols, and included some extra concepts too.
 
 ### Off The Grid
-{{< img OffTheGridDescription.png >}}  
+{{< img OffTheGridDescription.png "Challenge info for Off The Grid">}}  
 
-[Download the challenge](https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_off_the_grid.zip)
+{{< externalLink "Download the challenge" "https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_off_the_grid.zip" >}}
 
 A super fun challenge, where the important things to do are read the datasheet, and debug your own code.
 
 First important thing to note is the schematic. This provides all the context needed to analyse the .sal capture given.
 
-{{< img OffTheGridSchematic.png >}}
+{{< img OffTheGridSchematic.png "Provided schematic for challenge">}}
 The full image can be found in the download file, but the most important things to note are: the model of OLED display and chip, the pins, and which channel they're connected to in the logic analyser.
 
-From the schematic, it states that the screen/chip combo used is the SH1306. Although there's a cheap OLED screen of the same model name on [aliexpress](https://www.aliexpress.com/item/1923853678.html), there isn't really a datasheet that explains anything about it. There is however, an OLED + chip with a very similar name, the SSD1306. And even better, it has a very handy [datasheet](https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf) for us to take a look at. Comparing the pins of our schematic and that of the datasheet, they're similar enough for us to use.
+From the schematic, it states that the screen/chip combo used is the SH1306. Although there's a cheap OLED screen of the same model name on {{< externalLink "aliexpress" "https://www.aliexpress.com/item/1923853678.html" >}}, there isn't really a datasheet that explains anything about it. There is however, an OLED + chip with a very similar name, the SSD1306. And even better, it has a very handy {{< externalLink "datasheet" "https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf" >}} for us to take a look at. Comparing the pins of our schematic and that of the datasheet, they're similar enough for us to use.
 
 Taking a look at what each pin means and is actually doing, we get the following information:
 - DIN: The actual data
@@ -125,37 +125,37 @@ Taking a look at what each pin means and is actually doing, we get the following
 
 Great, since we know that data is being written to the display (GDDRAM) we could probably try to find a way to emulate the screen, but how can we do that? Let's keep reading the datasheet.
 
-{{< img OffTheGridMCUInterface.png >}}
+{{< img OffTheGridMCUInterface.png "Datasheet about MCU interface - no not the Marvel Cinematic Universe">}}
 Based on this bit of the datasheet, we can deduce that the data transfer that has been captured is using 4-wire SPI. We know this because we have SDIN, (S)CLK, CS, D/C and RES. The `Tie LOW` and `NC` just means we can ignore those pins/signals.
 
 Sweet, now that we know what protocol is being used, we just need to figure out how to deal with the data being sent to GDDRAM. For now, we can ignore the commands (when D/C is low), since there are a lot of them in the datasheet, and at this stage there is no easy way to decode each command.
 
 Casually reading the datasheet, we hit the jackpot, some info on how the GDDRAM actually works.
-{{< img OffTheGridGDDRAM.png >}}
-{{<img OffTheGridGDDRAMEnlarge.png >}}
+{{< img OffTheGridGDDRAM.png "Datasheet showing how pages are aligned in GDDRAM">}}
+{{<img OffTheGridGDDRAMEnlarge.png "Datasheet showing how each byte goes into each page in GDDRAM">}}
 
 The key information we can take away here, is the fact that whatever is in GDDRAM is bitmapped. What this means is that a single bit represents a pixel on the screen. This means we won't need to do anything too fancy to display what is going on in the screen. A simple python script (and GIMP) is all we need.   
 But now we need to know how exactly the bits are arranged to get the bitmap that we want.
 
 First of all, the bits are read as groups of 8 (byte by byte). They are then arranged into a page as shown:
-{{< img OffTheGridByteByByte.png >}}  
+{{< img OffTheGridByteByByte.png "Sketch of how each bit is read as bytes">}}  
 Each page has 128 of these bytes, all along a row, from left to right:  
-{{< img OffTheGridPageLayout.png >}}
+{{< img OffTheGridPageLayout.png "Hand drawn version of how each byte fits into each page">}}
 And each page is stacked on top of each other, which will then give us our final image:
-{{< img OffTheGridPageStack.png >}}
+{{< img OffTheGridPageStack.png "Page stacking sketch">}}
 Bearing in mind that the dimensions of the OLED screen are 128x64, meaning we will have 8 pages per screen.
 
 Now that we know how the OLED screen will work, it's time to extract the data from the Saleae capture, and get our flag.
 
 As we know that the transfer protocol used was SPI, we can simply let a Saleae analyser give the required bits for us. We set the MOSI (or MISO, makes no difference in this case) as the data we want to get (Channel 0), our good old clock (Channel 1), and the enable line (Channel 3) which tells us when to sample our DIN. We set the enable line to active high, since when Channel 3 (D/C) is high, that's when data is being written into GDDRAM.
-{{< img OffTheGridSaleae.png >}}
+{{< img OffTheGridSaleae.png "SPI Settings used">}}
 
 Taking a look at how the data is transferred, we can see that there are 6 distinct "pulses" of data, indicating the number of different displays.
-{{< img OffTheGridScreenByScreen.png >}}
+{{< img OffTheGridScreenByScreen.png "6 clear blips of data">}}
 And within those pulses, there are 8 distinct blocks of data being sent to the GDDRAM, showing how data is sent page by page.
-{{< img OffTheGridPageByPage.png >}}
+{{< img OffTheGridPageByPage.png "Pages within each of the 6 blips">}}
 
-This gives us a good idea on how to write a simple script to turn all our bits to a bitmappable image. Although it's possible to use PIL to convert our bits straight to a bmp file, I like to export the bytes as .data, then open it up in GIMP to get the full picture. After some [debugging](#theres-an-imposter-among-us), we finally have a successful script.
+This gives us a good idea on how to write a simple script to turn all our bits to a bitmappable image. Although it's possible to use PIL to convert our bits straight to a bmp file, I like to export the bytes as .data, then open it up in GIMP to get the full picture. After some {{< externalLink "debugging" "#theres-an-imposter-among-us" >}}, we finally have a successful script.
 
 ```Python
 import csv
@@ -200,22 +200,22 @@ file.close()
 ```
 
 Now open our final image through GIMP, and we have our flag!
-{{< img OffTheGridFlag.png >}}
+{{< img OffTheGridFlag.png "Screenshot of flag in dodgy recreation of the LED screen">}}
 `CHTB{013d_h4ck1n9_f7w!2^25#}`
 ### Hidden
-{{< img HiddenDescription.png >}}  
+{{< img HiddenDescription.png "Challenge info for Hidden">}}  
 
-[Download the challenge](https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_hidden.zip)
+{{< externalLink "Download the challenge" "https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_hidden.zip" >}}
 
-This challenge added a nice touch of rev and some *bits* of guessing. Most of that knowledge courtesy of [genius teammate](https://jsur.in).
+This challenge added a nice touch of rev and some *bits* of guessing. Most of that knowledge courtesy of {{< externalLink "genius teammate" "https://jsur.in" >}}.
 
 Let's look at the firmware first. Opening the .ELF file in Ghidra gives us a good idea as to what's happening.
 1. We have some sort of XOR encryption going on  
-{{< img HiddenXOR.png >}}
-2. Building on that, there's a pseudo-random key generator, using [LCG algorithm](https://en.wikipedia.org/wiki/Linear_congruential_generator). We get that our seed is `0x2e9d3`(from next_in_seq), the multiplier is `0x303577d`, the increment is `0x145a`, and the modulus is `0xff`.
-{{< img HiddenKeyGen.png >}}
+{{< img HiddenXOR.png "XOR function in Ghidra">}}
+2. Building on that, there's a pseudo-random key generator, using {{< externalLink "LCG algorithm" "https://en.wikipedia.org/wiki/Linear_congruential_generator" >}}. We get that our seed is `0x2e9d3`(from next_in_seq), the multiplier is `0x303577d`, the increment is `0x145a`, and the modulus is `0xff`.
+{{< img HiddenKeyGen.png "Exactly what was said above but in Ghidra">}}
 3. Prior to being written, there's a small little operation done to the encoded data.
-{{< img HiddenPreWrite.png >}}
+{{< img HiddenPreWrite.png "Sneaky little step done to encoded things, shown in Ghidra">}}
 
 Putting it all together, we can figure out what's happening to the flag:
 Each byte of the flag (0x32, meaning a total of 50 bytes) is XOR'd with a different value determined by the pseudo-random key generator. Then, before it's written to the output file, the value is split into two, with the first half containing the first 4 MSB of the byte, plus 1, and the second half containing the next (and last) 4, also plus 1.
@@ -225,9 +225,9 @@ Now we can begin the bit extraction.
 Opening up the .sal file on our favourite logic analyser, all signs seemed to indicate that the data was being delivered using async serial (no clock, each gap between a fall and the next rise was a multiple of roughly the same time). However, attempts at getting the logic analyser to play nice didn't seem to work, with hundreds upon hundreds of (framing) errors being thrown at my face. This meant we'd have to extract all the bits ourselves. Luckily this isn't too difficult.
 
 When exporting the data as a CSV (using Saleae's default exporter), we can see that we're told when the signal changes, and what it's changed to (in channel 0, where the important data lies).
-{{< img HiddenCSV.png >}}
+{{< img HiddenCSV.png "CSV output of Saleae capture">}}
 Noting the approximate time a single bit is represented (in this case, approximately 17us), which can be seen by looking at the smallest gap between a rise and fall of a signal (or fall and rise). Longer signal lengths should be a multiple of this.
-{{< img HiddenSaleaeAnalysis.gif >}}
+{{< img HiddenSaleaeAnalysis.gif "Careful analysis involving moving the mouse very slowly over the Saleae capture">}}
 ```python
 import csv
 # arbitrary number to skip the initial/end high signals
@@ -306,7 +306,7 @@ print(plaintext.decode())
 And just like that, we get our flag!
 `CHTB{10w_13v31_f12mw4235_741ks_70_h42dw423_!@3418}`
 ### Discovery
-{{< img DiscoveryDescription.png >}}  
+{{< img DiscoveryDescription.png "Challenge info for Discovery">}}  
 
 This challenge was certainly challenging. I never got to solve it during the competition period, however, upon looking at solutions, this one is a very fun one to explore (fun is not guaranteed).
 
@@ -316,10 +316,10 @@ Unlike the other hardware challenges, this not only didn't involve Saleae, but a
 
 Despite a lot of begging and pleading, there didn't seem to be any way past the authentication on the AppWeb panel.
 
-As it turns out, the entirety of the authentication can by bypassed given that we know the username. A step by step walkthrough of how it works can be found [here](https://lab.wallarm.com/can-your-printer-hack-your-secrets-appweb-authorization-bypass-c609cf9024a7/) and the exploit script with a basic description behind the CVE can be seen [here](https://vulners.com/seebug/SSV:97181).
-But to summarise the issue, whilst the username and password is checked when the authentication type is set to "basic", if the http headers being sent to the server had the authentication type changed to either "digest" or "form", only the username is checked. Using this exploit (with the help of an [exploit script](#python-3-ified-exploit-script-to-bypass-authentication)) and guessing that the username was "admin" (because why wouldn't you have that as the username), we finally get access to the AppWeb panel.
+As it turns out, the entirety of the authentication can by bypassed given that we know the username. A step by step walkthrough of how it works can be found {{< externalLink "here" "https://lab.wallarm.com/can-your-printer-hack-your-secrets-appweb-authorization-bypass-c609cf9024a7/" >}} and the exploit script with a basic description behind the CVE can be seen {{< externalLink "here" "https://vulners.com/seebug/SSV:97181" >}}.
+But to summarise the issue, whilst the username and password is checked when the authentication type is set to "basic", if the http headers being sent to the server had the authentication type changed to either "digest" or "form", only the username is checked. Using this exploit (with the help of an {{< externalLink "exploit script" "#python-3-ified-exploit-script-to-bypass-authentication" >}}) and guessing that the username was "admin" (because why wouldn't you have that as the username), we finally get access to the AppWeb panel.
 
-{{< img "DiscoveryLoggedIn.png" >}}
+{{< img "DiscoveryLoggedIn.png" "Logged in screen with password hashes">}}
 
 Now, we're greeted with a few things of note. Within the RabbitMQ access table, there are 2 entries:
 - anthony_davis (with password hash `89D9743B793B22AEB9A8142ABD59FDF4CDABFDD01796C31BE7587C114E0D37C1`)
@@ -329,7 +329,7 @@ Throwing both of these password hashes into crackstation, we get a hit with anth
 On top of the password hashes, we're told that leo will be exchanging messages using the "topic" exchange type. This will be very important information shortly.
 
 Now armed with RabbitMQ credentials, let's get started with AMQP.
-AMQP (Advanced Message Queuing Protocol) is a messaging protocol, that allows for sending and receiving of messages with the use of queues. RabbitMQ is just an (open source) implementation of the protocol. [Here](https://www.rabbitmq.com/tutorials/tutorial-one-python.html) is a great tutorial going over RabbitMQ. But for now we only need to know a few things:
+AMQP (Advanced Message Queuing Protocol) is a messaging protocol, that allows for sending and receiving of messages with the use of queues. RabbitMQ is just an (open source) implementation of the protocol. {{< externalLink "Here" "https://www.rabbitmq.com/tutorials/tutorial-one-python.html" >}} is a great tutorial going over RabbitMQ. But for now we only need to know a few things:
 - RabbitMQ acts as a "broker", something that takes the message from a sender, and gives it to the receiver via a queue.
 - Because the exchange type is topic, we (the receiver) can only retrieve messages of a certain topic.
 
@@ -363,14 +363,14 @@ channel.start_consuming()
 ```
 
 Running the script, we get some outputs, and finally, the flag!
-{{< img DiscoveryFlag.png >}}
+{{< img DiscoveryFlag.png "Flag is revealed">}}
 `CHTB{1_h4v3_n0_n4m3_@_@}`
 
 ## Extras
 
 ### There's an imposter among us
-Whilst debugging some issues with the bit mapping in [Off The Grid](#off-the-grid), I encountered something very suspicious...
-{{< img OffTheGridImposter.png >}}
+Whilst debugging some issues with the bit mapping in {{< externalLink "Off The Grid" "#off-the-grid" >}}, I encountered something very suspicious...
+{{< img OffTheGridImposter.png "Sus amongus figure accidentally appears">}}
 ### Python 3-ified exploit script to bypass authentication
 ```python
 import requests

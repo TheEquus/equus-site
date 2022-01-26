@@ -1,7 +1,6 @@
 <!-- Default image path -->
-<!-- TODO figure out how to make responsive images -->
 {{ $mediaPath := .Page.Param "mediapath" }}
 
 {{ $file := path.Join $mediaPath (index .Params 0) }}
 
-<img src="{{ $file }}"/>
+<img src="{{ $file }}" alt="{{ index .Params 1 }}"/>
