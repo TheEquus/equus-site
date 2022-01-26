@@ -1,5 +1,13 @@
 {{ define "main" }}
-  <main>
-    <p> list page </p>
+
+  {{ $currentTitle := .Scratch.Get "currentTitle" }}
+
+  <main class="list">
+
+    <h1>{{ .Title | emojify }}</h1>
+
+      {{ partial "post-list" . }}
+
   </main>
+
 {{ end }}

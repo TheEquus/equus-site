@@ -238,10 +238,47 @@ a#backtotop {
     content: "^";
     font-family: 'Rubik';
     font-size: 2.5em;
-    color: $text-colour;
+    color: $darker-background;
   }
 
   &:hover {
     cursor: pointer;
+  }
+}
+
+.posts {
+    padding: 0;
+
+    li {
+    background-color: $main-colour;
+    border-radius: 3px;
+    transition: opacity .3s ease-in-out;
+    margin: .5rem 0;
+
+    &:hover {
+      cursor: pointer;
+      opacity: 0.75;
+    }
+
+    > a {
+      color: $darker-background;
+      display: flex;
+      margin: 20px auto;
+      padding: 15px 30px 15px;
+      text-decoration: none;
+      align-items: center;
+      word-break: break-word;
+
+      > p {
+        flex : 1;
+        margin: 0;
+        font-weight: bold;
+      }
+
+      > time {
+        margin-left: 2rem;
+        font-size: 0.7rem;
+      }
+    }
   }
 }
