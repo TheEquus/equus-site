@@ -1,0 +1,46 @@
+{{ define "main" }}
+  <main>
+    <article>
+      <header>
+
+        <h1>{{ .Title | emojify }}</h1>
+
+        {{ if or .Params.categories .Params.tags }}
+          <section class="terms">
+              {{- range sort (.GetTerms "categories") ".LinkTitle" "asc" -}}
+                <a class="btn" href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
+              {{- end -}}
+              {{- range sort (.GetTerms "tags") ".LinkTitle" "asc" -}}
+                <a class="btn" href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
+              {{- end -}}
+          </section>
+        {{- end -}}
+
+        {{ if not .Date.IsZero }}
+          <p>
+              Published on <time datetime="{{ .PublishDate.Format "2006-01-02" }}">{{ .PublishDate.Format "2006-01-02" }}</time>
+          </p>
+        {{ end }}
+
+      </header>
+
+      {{ if .Params.toc }}
+        <details class="toc" open>
+          <summary class="outline-dashed">
+            Table of Contents
+          </summary>
+
+          {{ .Page.TableOfContents }}
+        </details>
+      {{ end }}
+
+      <!-- Wrap tables to make use of overflow-x property -->
+      {{ $table := `(<table>(?:.|\n)+?</table>)` }}
+
+      {{ $improvedTable := printf `<section> ${1} </section>` }}
+
+      {{ .Content | replaceRE $table $improvedTable | safeHTML }}
+
+    </article>
+  </main>
+{{ end }}

@@ -1,0 +1,247 @@
+@import 'variables';
+
+:root {
+  font-size: $regular-text-size;
+}
+
+::selection {
+  background: $main-colour;
+  color: $selected-text-colour;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: $lighter-background;
+  color: $text-colour;
+}
+
+body {
+  margin: 0;
+  font-family: $body-font;
+  background: $lighter-background;
+  a {
+    color: $main-colour;
+    outline-offset: 2px;
+
+    transition:
+      opacity .2s ease-in-out,
+      outline-color .2s ease-in-out;
+    word-break: break-word;
+
+    &:hover {
+      opacity: .75;
+    }
+  }
+
+  > header {
+    background: $darker-background;
+    padding-top: .5em;
+    padding-bottom: .5em;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+
+    ul {
+      display: flex;
+      flex-direction: row;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+    }
+
+    a {
+      text-decoration: none;
+      padding: 10px 35px;
+      text-align: center;
+      display: block;
+    }
+  }
+}
+
+article {
+  margin: 9-px auto 120px;
+
+  > header {
+    margin: 0 0 2rem;
+
+    h1 {
+      line-height: 3rem;
+      margin: 9px 0;
+    }
+
+    p {
+      margin: 0;
+      font-size: .9rem;
+      font-style: italic;
+    }
+
+    a {
+      background: $main-colour;
+      color: $darker-background;
+      text-decoration: none;
+      padding: 0.2rem 0.4rem;
+      border-radius: 5px;
+      margin-right: 20px;
+    }
+
+    section {
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  p {
+    margin: 1.5rem 0;
+  }
+
+  ol, ul {
+    li {
+      &:first-of-type {
+        margin-top: .3rem;
+      }
+
+      &:not(:last-of-type) {
+        margin-bottom: .3rem;
+      }
+    }
+    > li::before {
+      content: '>';
+      margin-right: 8px;
+      color: $main-colour;
+      font-family: $heading-font;
+    }
+  }
+
+  pre {
+      background: $darker-background;
+      line-height : 1.5rem;
+      overflow-x: auto;
+      padding: 1.5rem;;
+    }
+
+  > section {
+    overflow-x: auto;
+    border: 1px solid;
+    table {
+      border-collapse: collapse;
+
+      th {
+        background: $text-colour;
+        color: $darker-background;
+        padding: 10px;
+      }
+
+      td {
+        border: 1px solid $text-colour;
+        padding: 10px;
+      }
+
+      tr {
+        transition:
+          background-color .5s ease,
+          color .5s ease;
+        &:hover {
+          background-color: $main-colour;
+
+          td {
+            color: $darker-background;
+          }
+        }
+      }
+    }
+  }
+}
+
+@for $i from 1 through 6 {
+  h#{$i} {
+    font-family: $heading-font;
+    font-size: 1rem + (0.3 * (6 - $i));
+    margin: 1rem 0;
+  }
+
+  h#{$i} + p {
+    margin-top: 0;
+  }
+}
+
+main {
+  margin: 90px auto;
+  padding: 0 15px;
+
+  max-width: 800px;
+  p {
+    line-height: 1.5rem;
+  }
+}
+
+code {
+  font-family: $code-font;
+  overflow-wrap: break-word;
+}
+
+
+
+audio, img, video {
+  margin: 1.8rem auto;
+}
+
+ol, ul {
+  list-style: none;
+}
+
+.toc {
+  background-color: $darker-background;
+  summary {
+    background: $main-colour;
+    border: 1px solid rgba(0,0,0,.3);
+    padding: 15px 20px 15px;
+    color: $darker-background;
+
+    transition:
+      opacity .2s ease;
+
+    &:hover {
+      opacity: .75;
+      cursor: pointer;
+    }
+  }
+
+  nav#TableOfContents {
+    padding: 6px 15px 15px 9px;
+
+    li::before {
+      color: $text-colour;
+    }
+  }
+}
+
+a#backtotop {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  width: 50px;
+  height: 50px;
+  background: $main-colour;
+  text-align: center;
+  font-size: 2rem;
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    opacity .3s,
+    visibility .3s;
+
+  &::after {
+    content: "^";
+    font-family: 'Rubik';
+    font-size: 2.5em;
+    color: $text-colour;
+  }
+
+  &:hover {
+    cursor: pointer;
+  }
+}

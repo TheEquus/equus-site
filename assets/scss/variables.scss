@@ -1,0 +1,39 @@
+// Text sizes
+$regular-text-size: 18px;
+
+// Colours
+$darker-background: #202925;
+$lighter-background: #404945;
+$main-colour: #88ffa8;
+$text-colour: #f8fdf9;
+$selected-text-colour: #101915;
+// Fonts
+$font-display: swap;
+
+@font-face {
+  font-family: 'AnonymousPro';
+  font-style: normal;
+  font-weight: 400;
+  font-display: $font-display;
+  src: local('AnonymousPro'), url('../fonts/AnonymousPro-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Heebo';
+  font-style: normal;
+  font-weight: 400;
+  font-display: $font-display;
+  src: local('Heebo'), url('../fonts/Heebo-VariableFont_wght.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Rubik';
+  font-style: normal;
+  font-weight: 800;
+  font-display: $font-display;
+  src: local('Rubik'), url('../fonts/Rubik-VariableFont_wght.ttf') format('truetype');
+}
+
+$heading-font: 'Rubik', sans-serif;
+$body-font: 'Heebo', sans-serif;
+$code-font: 'AnonymousPro', monospace;

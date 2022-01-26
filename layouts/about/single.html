@@ -1,0 +1,12 @@
+{{ define "main" }}
+
+  <main>
+    <article>
+      <header>
+        <h1>About Me</h1>
+      </header>
+      {{ .Content | safeHTML }}
+    </article>
+  </main>
+
+{{ end }}

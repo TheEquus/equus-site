@@ -1,0 +1,11 @@
+<!-- Menu -->
+<h1><a href="{{ .Site.BaseURL }}">{{ .Site.Title }}</a></h1>
+<ul>
+{{ if .Site.Menus.main }}
+  {{ with .Site.Menus.main }}
+        {{ range . }}
+            <li><a href="{{ .URL | relLangURL }}">{{ .Name }}</a></li>
+        {{ end }}
+  {{ end }}
+{{ end }}
+</ul>
