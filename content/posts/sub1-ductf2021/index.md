@@ -4,6 +4,8 @@ date: 26 Sep 2021
 draft: false
 toc: true
 categories: ["CTF"]
+cover: "cover.jpg"
+description: "A quick writeup on substitution 1 - a crypto challenge from DUCTF 2021"
 ---
 {{< img chall.png >}}
 Who knew I'd be writing a crypto writeup.

@@ -18,3 +18,7 @@ title = "Equus 🐴 (Annie)"
       name = "Posts"
       weight = 1
       url = "posts/"
+
+[sitemap]
+changefreq = "weekly"
+filename = "sitemap.xml"

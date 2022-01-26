@@ -4,6 +4,8 @@ date: 21 Sep 2021
 draft: false
 toc: true
 categories: ["CTF"]
+cover: "cover.jpg"
+description: "A writeup on a serial challenge in CSAW CTF 2021"
 ---
 {{< img ChallInfo.png >}}
 

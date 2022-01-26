@@ -4,6 +4,7 @@ date: 25 Oct 2021
 draft: false
 toc: true
 categories: ["Projects"]
+description: "The process small little password manager on an arduino, and editing a video to present it."
 ---
 
 {{< videoplayer "FinalPresVideo.mp4" >}}

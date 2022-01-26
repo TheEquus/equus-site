@@ -3,6 +3,7 @@ title: "The Writhing South Bass Cover"
 date: 16 Apr 2021
 draft: false
 categories: ["random"]
+description: "A quick showcase of Sex Baby's cover of The Writhing South by Say Anything"
 ---
 
 A fun song for a fun band. Sex Baby's cover of "The Writhing South" by Say Anything is out for the public to feast on!
