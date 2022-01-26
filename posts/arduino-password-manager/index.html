@@ -6,10 +6,11 @@
 <meta property="og:title" content="The password manager to cure lockdown woes">
 <meta property="og:description" content="The process small little password manager on an arduino, and editing a video to present it.">
 <meta property="og:url" content="https://theequus.github.io/hugo-site-files/posts/arduino-password-manager/">
+<meta name=twitter:card content="summary_large_image">
 <link rel=preload href=https://theequus.github.io/hugo-site-files/fonts/AnonymousPro-Regular.ttf as=font crossorigin=anonymous>
 <link rel=preload href=https://theequus.github.io/hugo-site-files/fonts/Heebo-VariableFont_wght.ttf as=font crossorigin=anonymous>
 <link rel=preload href=https://theequus.github.io/hugo-site-files/fonts/Rubik-VariableFont_wght.ttf as=font crossorigin=anonymous>
-<link rel=stylesheet href=https://theequus.github.io/hugo-site-files/css/main.min.0a8f70c468b4922b767acf1358394fc9103a6a53aaf5c24089972771a1974b0a.css integrity="sha256-Co9wxGi0kit2es8TWDlPyRA6alOq9cJAiZcncaGXSwo=" crossorigin=anonymous>
+<link rel=stylesheet href=https://theequus.github.io/hugo-site-files/css/main.min.9275881164a5d25b330fbcf34275c8165c15f7bee46700ee9fdbb8f688a11756.css integrity="sha256-knWIEWSl0lszD7zzQnXIFlwV977kZwDun9u49oihF1Y=" crossorigin=anonymous>
 <title>The password manager to cure lockdown woes</title>
 <script src=https://theequus.github.io/hugo-site-files/js/main.min.a96afa085ea5710e329be0978d4a82bfb73b360d4492b02bc2fd1eaf26542e23.js integrity="sha256-qWr6CF6lcQ4ym+CXjUqCv7c7Ng1EkrArwv0eryZULiM=" crossorigin=anonymous></script>
 </head>
@@ -64,37 +65,43 @@ If you see this (without inspecting source), video tags don't seem to work on yo
 <h2 id=introduction>Introduction</h2>
 <p>I&rsquo;ll be introducing a roughly two week project that I worked on with two other group mates for a uni subject. The theme we were given was to build something that makes our home smarter or more fun. As a team, we started off with the idea of a password manager and decided to add some small fun elements, that would make this password manager the most fun password manager out there (hopefully).
 This page will talk about the technical side of the password manager system itself in more detail than the video, as well as a bit about editing (with a tiny bit of animating) a video.</p>
-<p>Link to <a href=https://github.com/TheEquus/Arduino-Password-Manager>Github repo</a>.</p>
+<p>Link to <a href=https://github.com/TheEquus/Arduino-Password-Manager target=_blank>Github repo</a>
+</p>
 <h2 id=the-manager>The Manager</h2>
 <p>The prompt itself was very open ended, however we needed to use the Arduino (and some accompanying sensors) to create something fun. In the end, we came up with a password manager that uses Python, which interfaces with the Arduino for some extra functions.</p>
 <h3 id=python>Python</h3>
 <p>Despite my questionable coding habits, I was in charge of the entire Python side of the system, due to me being the one with the most experience with it.<br>
 Initially I had planned on letting all the user interaction happen via an LCD display connected to the Arduino, and let the Python side of things be controlled through terminal only. However, I was inspired by a workshop/project from the same uni subject where I built a simple GUI in MATLAB.
-<img src=media/MATLABInspo.png>
+<img src=media/MATLABInspo.png alt="Flashback to an old MATLAB project">
 <br>
 What this MATLAB app did was control the angle of a servo, on which there was a range finder which sent distance readings to be plotted on MATLAB. This was all made entirely possible thanks to a serial connection between MATLAB and Arduino (where the servo and range finder were connected).</p>
-<p>As fun of a challenge using MATLAB for this system would be, I think I&rsquo;ve had enough MATLAB for one year. So using the serial connection idea, it was possible to let the Python code communicate with Arduino with <a href=https://pyserial.readthedocs.io/en/latest/pyserial.html>pySerial</a>, a python module. In terms of designing and making a GUI, there are plenty of libraries to choose from (such as <a href=https://docs.python.org/3/library/tkinter.html>tkinter</a>, <a href=https://docs.wxpython.org/>wxPython</a> and <a href=https://www.riverbankcomputing.com/static/Docs/PyQt5/>PyQT</a> just to name a few). I ended up choosing <a href=https://pysimplegui.readthedocs.io/en/latest/>PySimpleGUI</a> mainly because I was promised an easy and quick way to code up a GUI.</p>
+<p>As fun of a challenge using MATLAB for this system would be, I think I&rsquo;ve had enough MATLAB for one year. So using the serial connection idea, it was possible to let the Python code communicate with Arduino with <a href=https://pyserial.readthedocs.io/en/latest/pyserial.html target=_blank>pySerial</a>
+, a python module. In terms of designing and making a GUI, there are plenty of libraries to choose from (such as <a href=https://docs.python.org/3/library/tkinter.html target=_blank>tkinter</a>
+, <a href=https://docs.wxpython.org/ target=_blank>wxPython</a>
+and <a href=https://www.riverbankcomputing.com/static/Docs/PyQt5/ target=_blank>PyQT</a>
+just to name a few). I ended up choosing <a href=https://pysimplegui.readthedocs.io/en/latest/ target=_blank>PySimpleGUI</a>
+mainly because I was promised an easy and quick way to code up a GUI.</p>
 <h4 id=gui>GUI</h4>
 <p>Since the Arduino has no way to store passwords (that I&rsquo;m aware of), all the passwords will have to be stored onto the computer that&rsquo;s running the Python code. To do that, it will read and write all the details onto a text file, saved in the same directory as the Python code. If a non-empty password file doesn&rsquo;t exist in the same directory, it will bring the user to a sign up screen, where they&rsquo;ll be prompted to create a master password.
-<img src=media/SignUpScreen.png>
+<img src=media/SignUpScreen.png alt="Sign up screen with prompts for password and password confirmation">
 <br>
 If a non-empty password file already exists, or the user has finished setting a master password, they&rsquo;ll be taken to a login page (I was clearly too lazy to fix up the login message).<br>
-<img src=media/LoginScreen.png>
+<img src=media/LoginScreen.png alt="Login screen of just a single password prompt calling this final product a test">
 Once successfully logged in, the user will be brought to the home page, where all their accounts and passwords are stored.<br>
-<img src=media/HomeScreen.png>
+<img src=media/HomeScreen.png alt="View of a very empty password manager">
 <br>
 By clicking &ldquo;New password&rdquo;, the user will be introduced to an additional screen where they are able to add a new account password combination. The user is able to enter a password of their own choosing, or use the generate password button to automatically generate one for them. Even after generating a random password, the password can still be edited.<br>
-<img src=media/NewPass.png>
+<img src=media/NewPass.png alt="Create new password addition to a very empty password manager">
 <br>
 The user is also able to see passwords of all their accounts, copy a password to their clipboard, or delete an entry.
-<img src=media/AccountsGif.gif>
+<img src=media/AccountsGif.gif alt="gif of all the secret passwords being revealed">
 </p>
 <h4 id=the-random-password-generator>The Random Password Generator</h4>
 <p>Now to reveal the magic behind the &ldquo;Generate password&rdquo; button. When the button is clicked, the Python code will request a number from the Arduino (more details on how that number is generated later).<br>
 This number is fed into the <code>urandom</code> function from Python&rsquo;s <code>os</code> module. What this outputs is a very random (technically not <em>truly</em> random, but that&rsquo;s a topic for computer science to handle) sequence of bytes, whose size is determined by the number given by the Arduino.<br>
 The result is then fed into <code>random.seed()</code>, which will act as the seed to generate a large integer within a certain range.</p>
 <p>The large integer that gets generated will get its digits split into groups of 2, where each group will represent one character of the password. Then, a book cipher-like decoding will occur, where the alphabet is all ascii letters (A-Z and a-z, from <code>string</code> module&rsquo;s <code>ascii_letters</code>), all numerical digits (0-9, from <code>string</code> module&rsquo;s <code>digits</code>), and select punctuation (<code>!@#$%^&*</code>). This choice is somewhat arbitrary. Since there needs to be 100 characters in the password alphabet (groups of two numbers range from 00-99), the numerical digits were repeated 3 additional times in order to pad the password alphabet. This choice was absolutely very arbitrary.<br>
-<img src=media/PassDecode.png>
+<img src=media/PassDecode.png alt='Sketch of all the "brilliance" behind how the characters are generated'>
 </p>
 <h4 id=storing-passwords>Storing Passwords</h4>
 <p>Just to add a tiny bit of security, the passwords themselves are not stored as plain text in a file, but rather as the encoding of it (using the password alphabet described above). All passwords (whether generated or entered manually by the user), are encoded when the &ldquo;Create&rdquo; button is clicked.<br>
@@ -103,9 +110,10 @@ The master password on the other hand is stored differently. It is hashed using 
 <p>The features on the Arduino were handled by my group mates, but here&rsquo;s an explanation of what happens.</p>
 <h4 id=the-sensors>The Sensors</h4>
 <p>To generate a number that then becomes the seed to the random number generator in Python, there are two separate voltage divider circuits, involving a photoresistor and a thermistor. Both of these are special types of resistors, and their resistance changes according to the brightness and temperature of its surroundings respectively.
-<img src=media/Sensors.png>
+<img src=media/Sensors.png alt="Image about how the random numbers are generated from the resistors">
 <br>
-The Arduino measures the voltage across the photoresistor/thermistor, and returns a number between 0-1023, due to how the Arduino <a href=https://www.arduino.cc/reference/en/language/functions/analog-io/analogread/>reads in the analog values</a>. These two numbers then get added together, and are sent through serial back to Python.</p>
+The Arduino measures the voltage across the photoresistor/thermistor, and returns a number between 0-1023, due to how the Arduino <a href=https://www.arduino.cc/reference/en/language/functions/analog-io/analogread/ target=_blank>reads in the analog values</a>
+. These two numbers then get added together, and are sent through serial back to Python.</p>
 <h4 id=the-lcd>The LCD</h4>
 <p>There is an LCD that acts as part of a visual display of success/failure. When a password has successfully been created (i.e. when the create button is clicked on the GUI), the LCD will display &ldquo;PW GEN Success&rdquo;, along with the password that had been created. On failure, it will display &ldquo;PW GEN FAIL&rdquo;.</p>
 <h4 id=the-rgb-led>The RGB LED</h4>
@@ -129,22 +137,30 @@ The Arduino measures the voltage across the photoresistor/thermistor, and return
 <li>The password manager GUI could do with additional features, such as editing an existing password, or even changing the master password. Someone with more design talent than I could also make the user interface a lot better.</li>
 </ul>
 <h2 id=the-video>The Video</h2>
-<p>Now, within the two weeks we had to get this project done, my group mates and I also needed to make a video for the subject. Being the only one in the group who felt confident enough to edit videos, I was tasked with being the de facto editor and director for the group. This was a role I was definitely not prepared for one bit. I had previously used Adobe After Effects to do some video editing (and a ton of animating mouths moving), but that was 5 years ago, and using a high school license. After some experimenting with free, open source alternatives, I settled on <a href=https://www.shotcut.org/>Shotcut</a>, due to its decent performance on my computer, and had most of the features that I wanted (that required lots of looking up tutorials for).</p>
+<p>Now, within the two weeks we had to get this project done, my group mates and I also needed to make a video for the subject. Being the only one in the group who felt confident enough to edit videos, I was tasked with being the de facto editor and director for the group. This was a role I was definitely not prepared for one bit. I had previously used Adobe After Effects to do some video editing (and a ton of animating mouths moving), but that was 5 years ago, and using a high school license. After some experimenting with free, open source alternatives, I settled on <a href=https://www.shotcut.org/ target=_blank>Shotcut</a>
+, due to its decent performance on my computer, and had most of the features that I wanted (that required lots of looking up tutorials for).</p>
 <h3 id=the-visuals>The Visuals</h3>
 <p>Thankfully, my group mates were able to provide visuals for parts of the video. The entire material and demonstration section just required some slicing and piecing pieces together, and the intro just needed additional editing touches. However, the real struggle lay in the parts in between: the dialogue, and my short technical explanation.<br>
 No one really had any idea what to put on top of these, hell, I didn&rsquo;t even know how I wanted my explanation parts to look like. Eventually I settled with doing some really basic drawings and animations, for better or for worse.<br>
-All drawings were drawn using <a href=http://firealpaca.com/>FireAlpaca</a> mostly because it was something I already had installed on my computer, and it sure beats MS paint. It also has onion skin view, which helps with animating. I initially wanted to use <a href=https://opentoonz.github.io/e/>OpenToonz</a> or <a href=https://www.pencil2d.org/>Pencil2D</a> for a better time doing lip syncing animations, but both these applications seemed to hate my drawing tablet. Hence, I resorted to drawing each frame in FireAlpaca, and manually stitching them together with Shotcut.
-<img src=media/LipSync.gif>
+All drawings were drawn using <a href=http://firealpaca.com/ target=_blank>FireAlpaca</a>
+mostly because it was something I already had installed on my computer, and it sure beats MS paint. It also has onion skin view, which helps with animating. I initially wanted to use <a href=https://opentoonz.github.io/e/ target=_blank>OpenToonz</a>
+or <a href=https://www.pencil2d.org/ target=_blank>Pencil2D</a>
+for a better time doing lip syncing animations, but both these applications seemed to hate my drawing tablet. Hence, I resorted to drawing each frame in FireAlpaca, and manually stitching them together with Shotcut.
+<img src=media/LipSync.gif alt="Brilliant lip syncing being demonstrated">
 </p>
 <h4 id=visual-inspiration-and-references>Visual Inspiration and References</h4>
-<p>Lip syncing: <a href="https://www.youtube.com/watch?v=tMWiYIVoDis">The video that got me into drawing mouths that move</a><br>
+<p>Lip syncing: <a href="https://www.youtube.com/watch?v=tMWiYIVoDis" target=_blank>The video that got me into drawing mouths that move</a>
+<br>
 The arm-less stick figures: My drawing talent (arms are overrated anyway)<br>
-The better looking stick figures: <a href=https://c8.alamy.com/comp/T5R8KC/cartoon-stick-figure-drawing-conceptual-illustration-of-angry-man-or-businessman-working-in-office-on-computer-another-man-is-holding-unplugged-internet-network-or-electric-power-cable-T5R8KC.jpg>1</a>, <a href="https://media.istockphoto.com/vectors/vector-cartoon-illustration-of-five-men-or-businessmen-thinking-hard-vector-id1187694501?k=6&m=1187694501&s=612x612&w=0&h=fA-RDMWHO2s_9rWRzpwY81O5s2PSE3YrRzDMc8Rk6BM=">2</a>, <a href=https://as1.ftcdn.net/jpg/01/63/70/02/500_F_163700215_TnxEmFBLJLjX63hDVHSMJ0gU3NyJeCcy.jpg>3</a></p>
+The better looking stick figures: <a href=https://c8.alamy.com/comp/T5R8KC/cartoon-stick-figure-drawing-conceptual-illustration-of-angry-man-or-businessman-working-in-office-on-computer-another-man-is-holding-unplugged-internet-network-or-electric-power-cable-T5R8KC.jpg target=_blank>1</a>
+, <a href="https://media.istockphoto.com/vectors/vector-cartoon-illustration-of-five-men-or-businessmen-thinking-hard-vector-id1187694501?k=6&m=1187694501&s=612x612&w=0&h=fA-RDMWHO2s_9rWRzpwY81O5s2PSE3YrRzDMc8Rk6BM=" target=_blank>2</a>
+, <a href=https://as1.ftcdn.net/jpg/01/63/70/02/500_F_163700215_TnxEmFBLJLjX63hDVHSMJ0gU3NyJeCcy.jpg target=_blank>3</a>
+</p>
 <h3 id=the-audio>The Audio</h3>
 <p>The audio was the part that received the least attention, as it mainly involved dragging and dropping the audio files into the editor, with minor changes to volume, and perhaps the occasional fade in/out. Music was pulled from copyright free music sites (except for Sandstorm).</p>
 <h3 id=the-struggles>The Struggles</h3>
 <p>My computer is in no way designed to edit videos, and editing a video with several hundreds of files (mostly due to lip syncing images) using Shotcut definitely slowed down the entire editing process down.<br>
-<img src=media/ThatsALotOfFiles.png>
+<img src=media/ThatsALotOfFiles.png alt="Lots of files">
 Although my memory usage hovered around 80-90%, and CPU varied between 50-70%, towards the end of the editing process, thankfully, the only thing that was slow to respond was Shotcut. The rest of the computer could function perfectly normally. Shockingly, Shotcut only crashed unexpectedly twice over the period of editing the video! For comparison, 5 years ago, Adobe After Effects would crash upwards of 10 times a day for me.</p>
 <p>A limitation we had to have with the video, was its length. A requirement for the video was for it to be 5 minutes (+/- 30 seconds). Keeping the video within the time constraint meant that a lot of more detailed explanations had to be cut out (and is partially why this entire write up exists).</p>
 <h2 id=conclusion>Conclusion</h2>

@@ -7,10 +7,11 @@
 <meta property="og:description" content="A quick writeup on substitution 1 - a crypto challenge from DUCTF 2021">
 <meta property="og:image" content="https:/theequus.github.io/hugo-site-files/posts/sub1-ductf2021/media/cover.jpg">
 <meta property="og:url" content="https://theequus.github.io/hugo-site-files/posts/sub1-ductf2021/">
+<meta name=twitter:card content="summary_large_image">
 <link rel=preload href=https://theequus.github.io/hugo-site-files/fonts/AnonymousPro-Regular.ttf as=font crossorigin=anonymous>
 <link rel=preload href=https://theequus.github.io/hugo-site-files/fonts/Heebo-VariableFont_wght.ttf as=font crossorigin=anonymous>
 <link rel=preload href=https://theequus.github.io/hugo-site-files/fonts/Rubik-VariableFont_wght.ttf as=font crossorigin=anonymous>
-<link rel=stylesheet href=https://theequus.github.io/hugo-site-files/css/main.min.0a8f70c468b4922b767acf1358394fc9103a6a53aaf5c24089972771a1974b0a.css integrity="sha256-Co9wxGi0kit2es8TWDlPyRA6alOq9cJAiZcncaGXSwo=" crossorigin=anonymous>
+<link rel=stylesheet href=https://theequus.github.io/hugo-site-files/css/main.min.9275881164a5d25b330fbcf34275c8165c15f7bee46700ee9fdbb8f688a11756.css integrity="sha256-knWIEWSl0lszD7zzQnXIFlwV977kZwDun9u49oihF1Y=" crossorigin=anonymous>
 <title>Path to a crypto master, the engineer way</title>
 <script src=https://theequus.github.io/hugo-site-files/js/main.min.a96afa085ea5710e329be0978d4a82bfb73b360d4492b02bc2fd1eaf26542e23.js integrity="sha256-qWr6CF6lcQ4ym+CXjUqCv7c7Ng1EkrArwv0eryZULiM=" crossorigin=anonymous></script>
 </head>
@@ -55,7 +56,7 @@ Table of Contents
 </nav>
 </details>
 <p>
-<img src=media/chall.png>
+<img src=media/chall.png alt="Challenge info">
 Who knew I&rsquo;d be writing a crypto writeup.</p>
 <h2 id=the-beginning>The Beginning</h2>
 <p>The challenge provides a SageMath bit of code, as well as a cipher text.</p>
@@ -70,7 +71,7 @@ FLAG <span style=color:#f92672>=</span> open(<span style=color:#e6db74>&#39;./fl
 enc <span style=color:#f92672>=</span> encrypt(FLAG, f)
 print(enc)
 </code></pre></div><p>
-<img src=media/CipherText.png>
+<img src=media/CipherText.png alt="Hex output of cipher text">
 That&rsquo;s some messy looking cipher text&mldr;</p>
 <h3 id=understanding-the-sage>Understanding the sage</h3>
 <p>Thankfully the SageMath here is nice and short. All that we need to know, is that each character of the flag is thrown into the encryption function <code>f</code>. So to reverse it, we just do the opposite.<br>
@@ -89,7 +90,7 @@ Now that&rsquo;s much better. Now to simply reverse the values and &mldr;</p>
 <h2 id=oh-no>Oh no</h2>
 <h3 id=an-unnatural-call>An unnatural call</h3>
 <p>I then felt a disturbance in the air. My computer was absorbed by a bright, blinding light. When my senses recovered I saw this:
-<img src=media/Matlab.png>
+<img src=media/Matlab.png alt="Be thankful you aren't seeing MATLAB blinding your eyes with their very white UI">
 I guess I have no choice now. The call of engineers can not be ignored.</p>
 <h3 id=an-unholy-solve>An unholy solve</h3>
 <p>Matlab thankfully has a very simple way of solving quadratic equations. Using the <code>root()</code> function, in addition to rounding, I summoned the following code:</p>

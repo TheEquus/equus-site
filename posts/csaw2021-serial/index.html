@@ -7,10 +7,11 @@
 <meta property="og:description" content="A writeup on a serial challenge in CSAW CTF 2021">
 <meta property="og:image" content="https:/theequus.github.io/hugo-site-files/posts/csaw2021-serial/media/cover.jpg">
 <meta property="og:url" content="https://theequus.github.io/hugo-site-files/posts/csaw2021-serial/">
+<meta name=twitter:card content="summary_large_image">
 <link rel=preload href=https://theequus.github.io/hugo-site-files/fonts/AnonymousPro-Regular.ttf as=font crossorigin=anonymous>
 <link rel=preload href=https://theequus.github.io/hugo-site-files/fonts/Heebo-VariableFont_wght.ttf as=font crossorigin=anonymous>
 <link rel=preload href=https://theequus.github.io/hugo-site-files/fonts/Rubik-VariableFont_wght.ttf as=font crossorigin=anonymous>
-<link rel=stylesheet href=https://theequus.github.io/hugo-site-files/css/main.min.0a8f70c468b4922b767acf1358394fc9103a6a53aaf5c24089972771a1974b0a.css integrity="sha256-Co9wxGi0kit2es8TWDlPyRA6alOq9cJAiZcncaGXSwo=" crossorigin=anonymous>
+<link rel=stylesheet href=https://theequus.github.io/hugo-site-files/css/main.min.9275881164a5d25b330fbcf34275c8165c15f7bee46700ee9fdbb8f688a11756.css integrity="sha256-knWIEWSl0lszD7zzQnXIFlwV977kZwDun9u49oihF1Y=" crossorigin=anonymous>
 <title>"Oh yeah Motorola exists" - Revelations made in CSAW CTF 2021</title>
 <script src=https://theequus.github.io/hugo-site-files/js/main.min.a96afa085ea5710e329be0978d4a82bfb73b360d4492b02bc2fd1eaf26542e23.js integrity="sha256-qWr6CF6lcQ4ym+CXjUqCv7c7Ng1EkrArwv0eryZULiM=" crossorigin=anonymous></script>
 </head>
@@ -61,7 +62,7 @@ Table of Contents
 </ul>
 </nav>
 </details>
-<img src=media/ChallInfo.png>
+<img src=media/ChallInfo.png alt="Challenge info">
 <p>A mildly interesting challenge that touches (very briefly) on serial communication. But given that the files are .sal files, we can use the trusty old Saleae&rsquo;s logic analyser to help decode everything.</p>
 <p>TL;DR: Use Saleae to <a href=#extraction>extract information</a>, <a href=#research>be reminded that Motorola exists</a> and created S-records, <a href=#apply>break the information down</a>, <a href=#loading-up-ghidra>use Ghidra</a> to disassemble and decompile the machine code, and <a href=#trust-the-python>make sense of everything</a> to eventually obtain the flag.</p>
 <h2 id=introduction>Introduction</h2>
@@ -69,31 +70,33 @@ Table of Contents
 <h2 id=extraction>Extraction</h2>
 <h3 id=keysal>key.sal</h3>
 <p>First, we&rsquo;ll take a look at key.sal, and see what we can get.<br>
-<img src=media/KeyObserve.png>
+<img src=media/KeyObserve.png alt="Lots of squiggly lines from saleae">
 <br>
 There are only two channels to look at, and given that one channel (channel 0 in white) seems to have pretty consistent rises and falls, it&rsquo;s safe to say that this is the clock. Leaving channel 1 (the orange channel) to be the data channel we need to collect. Thankfully, figuring out which protocol could be used isn&rsquo;t too difficult given this information, and just a casual click through all the possible analysers Saleae provides, leads us to I2C being the best candidate for this capture.
-<img src=media/KeySettings.png>
+<img src=media/KeySettings.png alt="Setting for I2C extraction">
 <br>
 Here we have assigned our clock (SCL) to channel 0, and data (SDA) to channel 1.<br>
-<img src=media/KeyAnalyse.png>
+<img src=media/KeyAnalyse.png alt="More squiggly lines, but with careful analysis">
 Applying those settings gives us the the above.
-<img src=media/I2CTI.png>
+<img src=media/I2CTI.png alt="Texas Instruments documentation about I2C">
 <br>
-Even though it&rsquo;s not strictly necessary to know much/anything about I2C, here&rsquo;s a great diagram from <a href=https://www.ti.com/lit/an/slva704/slva704.pdf>Texas Instruments</a> that matches what we see in the capture. We can see that SCL is broken into groups of 9 periods (rise and fall of the clock), which matches to I2C&rsquo;s 8 bits of data, plus an acknowledge bit (each period of the clock transmits one bit).<br>
+Even though it&rsquo;s not strictly necessary to know much/anything about I2C, here&rsquo;s a great diagram from <a href=https://www.ti.com/lit/an/slva704/slva704.pdf target=_blank>Texas Instruments</a>
+that matches what we see in the capture. We can see that SCL is broken into groups of 9 periods (rise and fall of the clock), which matches to I2C&rsquo;s 8 bits of data, plus an acknowledge bit (each period of the clock transmits one bit).<br>
 Looking at the output terminal of the analyser, we get the following information:<br>
 <code>read to 0x08 ack data: 0x59 0x57 0x72 0x31 0x79 0xCE 0x94 0x8D 0x15 0xD4 0x54 0x02 0x7C 0x5C 0xA0 0x83 0x3D 0xAC 0xB7 0x2A 0x17 0x67 0x76 0x38 0x98 0x8F 0x69 0xE8 0xD0</code><br>
 Since there isn&rsquo;t anything that can be done to these hex strings, it&rsquo;s probably safe to assume that&rsquo;s all for now regarding key.sal - onwards to capture.sal!</p>
 <h3 id=capturesal>capture.sal</h3>
 <p>
-<img src=media/CaptureOverview.png>
+<img src=media/CaptureOverview.png alt="Extremely zoomed out squiggly lines from saleae">
 <br>
 Giving the capture a look, there are clearly two blocks of information being sent. Since this capture uses the same number of channels, and each channel has the same behaviour across the two blocks, it&rsquo;s safe to assume the same protocol is being used within this capture. Given that there are more than 2 channels, we can rule out I2C. We just need a closer look at what&rsquo;s going on in each channel.<br>
-<img src=media/CaptureProtocol.png>
+<img src=media/CaptureProtocol.png alt="Zoomed in version of the zoomed out squiggly lines">
 Upon closer inspection, we can see a good amount of squiggly lines. Just from the image alone, we can see that channel 0 is probably a clock, channel 1 is some enable line (active low), channel 3 is data, and channel 2 is dead to us. Now some amount of scrolling through Saleae&rsquo;s logic analyser will lead us to SPI.<br>
-<img src=media/CaptureSettings.png>
+<img src=media/CaptureSettings.png alt="SPI settings">
 <br>
-Based on the information we do have, we can plug them into the settings for SPI. Again, knowing SPI in detail is not necessary, but a <a href="https://www.youtube.com/watch?v=MCi7dCBhVpQ">here&rsquo;s a great video</a> on the basics of SPI.<br>
-<img src=media/CaptureHex.png>
+Based on the information we do have, we can plug them into the settings for SPI. Again, knowing SPI in detail is not necessary, but a <a href="https://www.youtube.com/watch?v=MCi7dCBhVpQ" target=_blank>here's a great video</a>
+on the basics of SPI.<br>
+<img src=media/CaptureHex.png alt="Hex output of squiggly lines">
 <br>
 Taking a look at the analyser&rsquo;s output table, we can see that the data (miso in my case) seems quite ASCII like. There are many useless facts stored in my brain, and knowing that 0x30-0x39 represents numbers 0-9 is one of them. So converting all the hex to ASCII output, gives us the following:</p>
 <p>Block 1:</p>
@@ -116,12 +119,14 @@ S123062C39290001913F001C813F001C2F89001C409DFED0813F00083929001D3940000040
 S11B064C9949000060000000397F003083EBFFFC7D615B784E80002060
 S503000CF0
 </code></pre><h2 id=what-in-the-world-are-all-these-ss>What in the world are all these S&rsquo;s</h2>
-<p>This looks very similar to <a href=https://en.wikipedia.org/wiki/Intel_HEX>Intel&rsquo;s hex format</a> (.hex files), which essentially allows for machine code to be written into a chip&rsquo;s ROM. However, instead of semicolons, there are S&rsquo;s in this case, which is very much not Intel hex-like. This calls for a round of intense searching.</p>
+<p>This looks very similar to <a href=https://en.wikipedia.org/wiki/Intel_HEX target=_blank>Intel's hex format</a>
+(.hex files), which essentially allows for machine code to be written into a chip&rsquo;s ROM. However, instead of semicolons, there are S&rsquo;s in this case, which is very much not Intel hex-like. This calls for a round of intense searching.</p>
 <h3 id=research>Research</h3>
-<p>Whip out the keyboard, it&rsquo;s time to search the internet for what these two blocks really are. Searching up <code>s instead of semicolon hex file</code> gives a couple sites mentioning &ldquo;S-records&rdquo;, which is very promising. However, if you&rsquo;re feeling efficient, <code>S hex files</code> will present the wikipedia page for S-records (originally created by Motorola!). Taking a look at <a href=https://en.wikipedia.org/wiki/SREC_(file_format)>SREC</a> confirms that we&rsquo;ve hit the jackpot. After spending quite a bit of time reminiscing about some <a href=https://en.wikipedia.org/wiki/Motorola_Razr>great old Motorola phones</a>, we can wipe off that sweat from the heavy round of researching, because now we&rsquo;ll apply our new found knowledge to the two blocks.</p>
+<p>Whip out the keyboard, it&rsquo;s time to search the internet for what these two blocks really are. Searching up <code>s instead of semicolon hex file</code> gives a couple sites mentioning &ldquo;S-records&rdquo;, which is very promising. However, if you&rsquo;re feeling efficient, <code>S hex files</code> will present the wikipedia page for S-records (originally created by Motorola!). Taking a look at <a href=https://en.wikipedia.org/wiki/SREC_(file_format)>SREC</a> confirms that we&rsquo;ve hit the jackpot. After spending quite a bit of time reminiscing about some <a href=https://en.wikipedia.org/wiki/Motorola_Razr target=_blank>great old Motorola phones</a>
+, we can wipe off that sweat from the heavy round of researching, because now we&rsquo;ll apply our new found knowledge to the two blocks.</p>
 <h3 id=apply>Apply</h3>
 <p>
-<img src=media/SRECStruct.png>
+<img src=media/SRECStruct.png alt="Wikipedia extract about S Records structure">
 Based on the record structure shown, we can break each block into the appropriate records, and work from there:</p>
 <p>Block 1: </p>
 <section> <table>
