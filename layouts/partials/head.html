@@ -46,3 +46,5 @@
 <!-- Get the javascripts -->
 {{ $main := resources.Get "js/main.js" | resources.ExecuteAsTemplate "js/main.js" . | minify | fingerprint }}
 <script defer src="{{ $main.Permalink }}" integrity="{{ $main.Data.Integrity }}" crossorigin="anonymous"></script>
+<!-- Plausible analytics -->
+<script defer data-domain="anniequus.com" src="https://plausible.io/js/plausible.js"></script>
