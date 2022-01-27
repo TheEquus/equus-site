@@ -1,5 +1,29 @@
 <meta charset='utf-8'>
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+{{ if eq .Kind "404" }}
+<meta name="description" content="Boring little 404 page">
+<title>Page doesn't exist</title>
+
+{{ else if or (eq .Kind "home") (eq .Type "about") }}
+<meta name="description" content="{{ .Site.Params.description }}">
+<title>{{ .Title | emojify }}</title>
+
+{{ else if eq .Kind "section" }}
+<meta name="description" content="Page with list of all posts">
+<title>{{ .Title | emojify }}</title>
+<link rel="canonical" href="{{ .Permalink }}">
+<!-- load required javascript for searching -->
+{{ $fuse := resources.Get "js/fuse.js" | resources.ExecuteAsTemplate "js/fuse.js" . | minify | fingerprint }}
+<script defer src="{{ $fuse.Permalink }}" integrity="{{ $fuse.Data.Integrity }}" crossorigin="anonymous"></script>
+{{ $search := resources.Get "js/search.js" | resources.ExecuteAsTemplate "js/search.js" . | minify | fingerprint }}
+<script defer src="{{ $search.Permalink }}" integrity="{{ $search.Data.Integrity }}" crossorigin="anonymous"></script>
+
+{{ else if eq .Kind "term" }}
+<meta name="description" content="Page for all posts with the tag/category '{{ .Title }}'">
+<title>{{ .Title | emojify }}</title>
+<link rel="canonical" href="{{ .Permalink }}">
+
+{{ else }}
 <meta name="description" content="{{ .Params.description }}">
 <!-- Open Graph things -->
 <meta property="og:title" content="{{ .Title }}">
@@ -11,12 +35,14 @@
 {{ end }}
 <meta property="og:url" content="{{ .Permalink }}">
 <meta name="twitter:card" content="summary_large_image">
+<title>{{ .Title | emojify }}</title>
+<link rel="canonical" href="{{ .Permalink }}">
+{{ end }}
 
 {{ partialCached "preload-fonts" .}}
 {{ partialCached "preload-css" .}}
 
-<title>{{ .Title }}</title>
 
-<!-- Main JS -->
+<!-- Get the javascripts -->
 {{ $main := resources.Get "js/main.js" | resources.ExecuteAsTemplate "js/main.js" . | minify | fingerprint }}
-<script src="{{ $main.Permalink }}" integrity="{{ $main.Data.Integrity }}" crossorigin="anonymous"></script>
+<script defer src="{{ $main.Permalink }}" integrity="{{ $main.Data.Integrity }}" crossorigin="anonymous"></script>

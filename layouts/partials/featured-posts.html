@@ -1,6 +1,6 @@
-{{ $pag := .Paginate (where .RegularPages "Type" "in" .Site.Params.mainSections) }}
+{{ $pag := .Paginate (where .Site.RegularPages "Type" "in" .Site.Params.mainSections) }}
 
-<ul id=posts>
+<ul id=featuredPosts>
   {{ range $pag.Pages }}
 
     {{ $pageDate := "" }}
@@ -11,12 +11,14 @@
 
     <li>
       <a href="{{ .RelPermalink }}" aria-label="{{ .LinkTitle }}{{ with $pageDate }}{{ printf " (%s)" . }}{{ end }}">
-        <p>{{ .LinkTitle | emojify }}</p>
+        <h4>{{ .LinkTitle | emojify }}</h4>
 
         {{ with $pageDate }}
           <time datetime="{{ . }}">{{ . }}</time>
         {{ end }}
       </a>
+      <p> {{ .Description }} </p>
+      <hr>
     </li>
   {{ end }}
 </ul>

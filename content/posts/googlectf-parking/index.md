@@ -4,7 +4,7 @@ date: 31 Jul 2021
 draft: false
 toc: true
 categories: ["CTF"]
-description: "A writeup for the hardware challenge \"parking\" from GoogleCTF 2021"
+description: "A writeup detailing the long and arduous journey I undertook for the hardware challenge \"parking\" from GoogleCTF 2021"
 ---
 
 {{< img challenge.png "Challenge info">}}

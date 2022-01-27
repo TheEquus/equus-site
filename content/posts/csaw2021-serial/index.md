@@ -5,7 +5,7 @@ draft: false
 toc: true
 categories: ["CTF"]
 cover: "cover.jpg"
-description: "A writeup on a serial challenge in CSAW CTF 2021"
+description: "A writeup on a serial challenge in CSAW CTF 2021 where bits get analysed and Motorola gets remembered"
 ---
 {{< img ChallInfo.png "Challenge info">}}
 
