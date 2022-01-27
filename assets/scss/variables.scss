@@ -24,7 +24,7 @@ $breakpoint: 768px;
 @font-face {
   font-family: 'Heebo';
   font-style: normal;
-  font-weight: 400;
+  font-weight: 400 bold;
   font-display: $font-display;
   src: local('Heebo'), url('../fonts/Heebo-VariableFont_wght.ttf') format('truetype');
 }
