@@ -3,4 +3,4 @@
 
 {{ $file := path.Join $mediaPath (index .Params 0) }}
 
-<img src="{{ $file }}" alt="{{ index .Params 1 }}"/>
+<img src="{{ $file }}" alt="{{ index .Params 1 }}" loading="lazy"/>

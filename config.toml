@@ -1,7 +1,6 @@
 baseURL = "https://anniequus,com/"
 languageCode = "en-au"
 title = "Equus 🐴 (Annie)"
-# theme = "color-your-world"
 
 [params]
   description = "Annie Nie's personal website \"full of\" personal projects and CTF writeups, where I try not to break things"
@@ -23,5 +22,5 @@ title = "Equus 🐴 (Annie)"
   changefreq = "weekly"
   filename = "sitemap.xml"
 
-[params.colours]
-  darkerBackground = "#202925"
+[outputs]
+  home = ["HTML", "RSS", "JSON"]

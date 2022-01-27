@@ -10,6 +10,9 @@ $selected-text-colour: #101915;
 // Fonts
 $font-display: swap;
 
+// When to switch to a mobile setup
+$breakpoint: 768px;
+
 @font-face {
   font-family: 'AnonymousPro';
   font-style: normal;

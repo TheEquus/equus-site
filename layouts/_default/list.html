@@ -2,7 +2,10 @@
 
   {{ $currentTitle := .Scratch.Get "currentTitle" }}
 
-  <main class="list">
+  <main>
+    {{ if eq .Kind "section" }}
+      {{ partial "search" . }}
+    {{ end }}
 
     <h1>{{ .Title | emojify }}</h1>
 

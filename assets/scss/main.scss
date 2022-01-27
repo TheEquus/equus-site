@@ -37,9 +37,11 @@ body {
     background: $darker-background;
     padding-top: .5em;
     padding-bottom: .5em;
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
+    @media (min-width: $breakpoint) {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
 
     ul {
       display: flex;
@@ -47,6 +49,10 @@ body {
       margin: 0;
       padding: 0;
       list-style: none;
+      @media (max-width: $breakpoint) {
+        align-items: center;
+        justify-content: space-around;
+      }
     }
 
     h1 {
@@ -254,7 +260,7 @@ a#backtotop {
   }
 }
 
-.posts {
+#posts {
     padding: 0;
 
     li {
@@ -288,5 +294,65 @@ a#backtotop {
         font-size: 0.7rem;
       }
     }
+  }
+}
+
+#search {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: stretch;
+
+  > label {
+    flex-basis: 100%;
+    line-height: 2rem;
+    font-family: 'Rubik';
+    font-size: 1.3rem;
+  }
+
+  > #searchInput {
+    padding: 15px 30px;
+    flex: 1;
+    border-radius: 5px;
+    background: $darker-background;
+    color: $text-colour;
+    border: 2px solid $lighter-background;
+
+    &:focus {
+      outline: none;
+      border: 2px solid $main-colour;
+    }
+  }
+}
+
+.about {
+  li {
+    font-family: 'Rubik';
+    font-size: 1.5rem;
+    line-height: 3rem;
+
+    > a {
+      margin-left: 1rem;
+    }
+  }
+}
+
+hr {
+  margin: 2.3rem auto;
+}
+
+#featuredPosts{
+  margin-top: 50px;
+
+  h4 {
+    margin-bottom: 0;
+  }
+
+  time {
+    font-size: 15px;
+  }
+
+  a {
+    text-decoration: none;
   }
 }
