@@ -4,7 +4,7 @@ date: 25 Oct 2021
 draft: false
 toc: true
 categories: ["Projects"]
-description: "A post about a small little arduino + python password manager I worked on for uni, as well a reflection on making and editing a video to present it"
+description: "Ever wished that you could have a password manager that not only managed your passwords, but played music and gave you treats? Well I know I haven't, but as a group project for uni, I and some group mates decided to fulfill this exact desire. This post features some details about the python + arduino password manager, as well as a reflection on making and editing a video to present it"
 ---
 
 {{< videoplayer "FinalPresVideo.mp4" >}}

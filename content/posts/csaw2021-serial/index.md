@@ -5,8 +5,9 @@ draft: false
 toc: true
 categories: ["CTF"]
 cover: "cover.jpg"
-description: "A writeup on a serial challenge in CSAW CTF 2021 where bits get analysed and Motorola gets remembered"
+description: "Read about bits being analysed and Motorola being remembered, this is a writeup on a serial challenge titled \"A different Type of Serial Key\" from CSAW CTF 2021"
 ---
+
 {{< img ChallInfo.png "Challenge info">}}
 
 A mildly interesting challenge that touches (very briefly) on serial communication. But given that the files are .sal files, we can use the trusty old Saleae's logic analyser to help decode everything.

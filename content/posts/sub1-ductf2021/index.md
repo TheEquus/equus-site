@@ -5,8 +5,9 @@ draft: false
 toc: true
 categories: ["CTF"]
 cover: "cover.jpg"
-description: "A very quick writeup on substitution 1 (a great beginner crypto challenge from DUCTF 2021) using a tool few people have used to solve crypto challenges"
+description: "The road to becoming a crypto master is a fun journey, but still no easy feat. So, I decided to begin this journey by doing a challenge from DUCTF 2021 called \"Substitution Cipher I\", using a tool few people have used to solve crypto challenges, despite it almost having \"maths\" in its name"
 ---
+
 {{< img chall.png "Challenge info">}}
 Who knew I'd be writing a crypto writeup.
 

@@ -4,7 +4,7 @@ date: 31 Jul 2021
 draft: false
 toc: true
 categories: ["CTF"]
-description: "A writeup detailing the long and arduous journey I undertook for the hardware challenge \"parking\" from GoogleCTF 2021"
+description: "GoogleCTF 2021 featured a hardware challenge called \"parking\", which resulted in me undertaking a long and arduous journey to solve it with a software I had never thought I would use in a CTF challenge - ModelSim"
 ---
 
 {{< img challenge.png "Challenge info">}}
