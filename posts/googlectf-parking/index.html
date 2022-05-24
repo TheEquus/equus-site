@@ -1,144 +1,22 @@
-<!doctype html><html lang=en data-mode=dark>
-<head>
-<meta charset=utf-8>
-<meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no">
-<meta name=description content="GoogleCTF 2021 featured a hardware challenge called &#34;parking&#34;, which resulted in me undertaking a long and arduous journey to solve it with a software I had never thought I would use in a CTF challenge - ModelSim">
-<meta property="og:title" content="Inefficiently solving GoogleCTF 2021 with Verilog (ModelSim)">
-<meta property="og:description" content="GoogleCTF 2021 featured a hardware challenge called &#34;parking&#34;, which resulted in me undertaking a long and arduous journey to solve it with a software I had never thought I would use in a CTF challenge - ModelSim">
-<meta property="og:url" content="https://anniequus.com/posts/googlectf-parking/">
-<meta name=twitter:card content="summary_large_image">
-<title>Inefficiently solving GoogleCTF 2021 with Verilog (ModelSim)</title>
-<link rel=canonical href=https://anniequus.com/posts/googlectf-parking/>
-<link rel=preload href=https://anniequus.com/fonts/AnonymousPro-Regular.ttf as=font crossorigin=anonymous>
-<link rel=preload href=https://anniequus.com/fonts/Heebo-VariableFont_wght.ttf as=font crossorigin=anonymous>
-<link rel=preload href=https://anniequus.com/fonts/Rubik-VariableFont_wght.ttf as=font crossorigin=anonymous>
-<link rel=stylesheet href=https://anniequus.com/css/main.min.eeede07a5a7900394b8a57e5f48e56f7d17c1e2c8f672373eee3fb1ae0234398.css integrity="sha256-7u3gelp5ADlLilfl9I5W99F8HiyPZyNz7uP7GuAjQ5g=" crossorigin=anonymous>
-<script defer src=https://anniequus.com/js/main.min.a96afa085ea5710e329be0978d4a82bfb73b360d4492b02bc2fd1eaf26542e23.js integrity="sha256-qWr6CF6lcQ4ym+CXjUqCv7c7Ng1EkrArwv0eryZULiM=" crossorigin=anonymous></script>
-<script defer data-domain=anniequus.com src=https://plausible.io/js/plausible.js></script>
-</head>
-<body>
-<header id=navbar>
-<h1><a href=https://anniequus.com/>Equus 🐴 (Annie)</a></h1>
-<ul>
-<li><a href=/about/>About</a></li>
-<li><a href=/posts/>Posts</a></li>
-</ul>
-</header>
-<a href=# id=backtotop></a>
-<div class=content>
-<main>
-<article>
-<header>
-<h1>Inefficiently solving GoogleCTF 2021 with Verilog (ModelSim)</h1>
-<section class=terms><a class=btn href=/categories/ctf/>CTF</a></section>
-<p>
-Published on <time datetime=2021-07-31>2021-07-31</time>
-</p>
-</header>
-<details class=toc open>
-<summary class=outline-dashed>
-Table of Contents
-</summary>
-<nav id=TableOfContents>
-<ul>
-<li><a href=#introduction>Introduction</a>
-<ul>
-<li><a href=#level-1>Level 1</a></li>
-<li><a href=#level-2>Level 2</a></li>
-</ul>
-</li>
-<li><a href=#analysis>Analysis</a>
-<ul>
-<li><a href=#diving-deeper>Diving deeper</a></li>
-<li><a href=#a-step-back>A step back</a></li>
-<li><a href=#junction-types>Junction types</a></li>
-<li><a href=#block-a>Block A</a></li>
-<li><a href=#block-b>Block B</a></li>
-<li><a href=#oh-yeah-its-all-coming-together>Oh yeah, it&rsquo;s all coming together</a></li>
-</ul>
-</li>
-<li><a href=#building-with-verilog>Building with Verilog</a></li>
-<li><a href=#solving-with-modelsim>Solving with ModelSim</a>
-<ul>
-<li><a href=#coming-up-with-some-ideas>Coming up with some ideas</a></li>
-<li><a href=#writing-the-testbench>Writing the testbench</a></li>
-</ul>
-</li>
-</ul>
-</nav>
-</details>
-<img src=media/challenge.png alt="Challenge info" loading=lazy>
-<p>I unfortunately did not solve this during the competition period, but mildly obsessed over this for about a week after the competition. Here&rsquo;s how I lost way too many hours of sleep.</p>
-<p>TL;DR - Realise this was all just <a href=#diving-deeper>one big digital logic circuit</a>, recognise the different <a href=#junction-types>logic gates and connections</a>, <a href=#building-with-verilog>build it all</a> in Verilog, solve with some <a href=#writing-the-testbench>ModelSim bruteforcing</a>, and get enough sleep.</p>
-<h2 id=introduction>Introduction</h2>
-<p>The challenge provides us with a <a href=https://github.com/google/google-ctf/tree/master/2021/quals/hw-parking/attachments target=_blank rel=noreferrer>zip file</a>
-containing a python script that takes in some data (level1 / level2) to build the challenge. run.sh just serves as an easy way to progress from level1 to level2.</p>
-<h3 id=level-1>Level 1</h3>
-<p>
-<img src=media/level1.png alt="Easy level 1 intro to the puzzle" loading=lazy>
-<br>
-Well this doesn&rsquo;t seem too bad&mldr; We&rsquo;re told (in the command line) that the goal is to simply move the red car from its original position, and the green block will encode the flag. Just shift the blocks around and it&rsquo;s as simple as that. Bring on level 2!</p>
-<h3 id=level-2>Level 2</h3>
-<p>
-<img src=media/level2.png alt="Level 20000 (not a typo) intro to the puzzle" loading=lazy>
-Well&mldr; I can almost see my life flashing before my eyes. Solving this through the matplotlib graph it creates would be a pain (especially given that it took about a minute for matplotlib to load the graph itself). Clearly, we need to analyse how it&rsquo;s getting the map.</p>
-<h2 id=analysis>Analysis</h2>
-<p>Let&rsquo;s take a look at the <a href=https://github.com/google/google-ctf/blob/master/2021/quals/hw-parking/attachments/game.py target=_blank rel=noreferrer>game.py</a>
-script first.<br>
-A quick skim through the code reveals that it parses the data determined by the level1/level2 file, builds the world&rsquo;s worst carpark, and allows for the user to click to move cars. There are a few important things to note:</p>
-<ul>
-<li>First, the red block has &ldquo;movable&rdquo; attribute as -2, and if the script detects that the block has moved from its original position, the <code>printflag()</code> command is called.</li>
-<li>Second, it adds the cars that have &ldquo;moveable&rdquo; attribute equal to -1 to a flagblocks array. These cars are the green blocks that encode the flag (in binary).</li>
-<li>On top of that, the each car represents each bit of the flag, and is determined by whether the car has to move from its original position (moved = 1, otherwise 0).</li>
-<li>And finally, the bits of the flag are separated into bytes (8 bits) and reversed before being converted to ASCII and printed.</li>
-</ul>
-<p>With all those in mind, we have a good enough overview of what we need to do: Determine which green blocks need to be moved in order for the red block to move.</p>
-<p>Now the hours of &ldquo;fun&rdquo; begin.</p>
-<h3 id=diving-deeper>Diving deeper</h3>
-<p>Whilst we have a general idea of how everything works, how in the world do we apply it here? Most importantly, where in the world are the green and red blocks?
+<!doctype html><html lang=en data-mode=dark><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no"><meta name=description content="GoogleCTF 2021 featured a hardware challenge called &#34;parking&#34;, which resulted in me undertaking a long and arduous journey to solve it with a software I had never thought I would use in a CTF challenge - ModelSim"><meta property="og:title" content="Inefficiently solving GoogleCTF 2021 with Verilog (ModelSim)"><meta property="og:description" content="GoogleCTF 2021 featured a hardware challenge called &#34;parking&#34;, which resulted in me undertaking a long and arduous journey to solve it with a software I had never thought I would use in a CTF challenge - ModelSim"><meta property="og:url" content="https://anniequus.com/posts/googlectf-parking/"><meta name=twitter:card content="summary_large_image"><title>Inefficiently solving GoogleCTF 2021 with Verilog (ModelSim)</title><link rel=canonical href=https://anniequus.com/posts/googlectf-parking/><link rel=preload href=https://anniequus.com/fonts/AnonymousPro-Regular.ttf as=font crossorigin=anonymous><link rel=preload href=https://anniequus.com/fonts/Heebo-VariableFont_wght.ttf as=font crossorigin=anonymous><link rel=preload href=https://anniequus.com/fonts/Rubik-VariableFont_wght.ttf as=font crossorigin=anonymous><link rel=stylesheet href=https://anniequus.com/css/main.min.eeede07a5a7900394b8a57e5f48e56f7d17c1e2c8f672373eee3fb1ae0234398.css integrity="sha256-7u3gelp5ADlLilfl9I5W99F8HiyPZyNz7uP7GuAjQ5g=" crossorigin=anonymous><script defer src=https://anniequus.com/js/main.min.cf29f7226a9c2b2d20303d20e6fdd133796cbbd092dfd7486f2e01b089ffe03d.js integrity="sha256-zyn3ImqcKy0gMD0g5v3RM3lsu9CS39dIby4BsIn/4D0=" crossorigin=anonymous></script>
+<script defer data-domain=anniequus.com src=https://plausible.io/js/plausible.js></script></head><body><header id=navbar><h1><a href=https://anniequus.com/>Equus 🐴 (Annie)</a></h1><ul><li><a href=/about/>About</a></li><li><a href=/posts/>Posts</a></li></ul></header><a href=# id=backtotop></a><div class=content><main><article><header><h1>Inefficiently solving GoogleCTF 2021 with Verilog (ModelSim)</h1><section class=terms><a class=btn href=/categories/ctf/>CTF</a></section><p>Published on <time datetime=2021-07-31>2021-07-31</time></p></header><details class=toc open><summary class=outline-dashed>Table of Contents</summary><nav id=TableOfContents><ul><li><a href=#introduction>Introduction</a><ul><li><a href=#level-1>Level 1</a></li><li><a href=#level-2>Level 2</a></li></ul></li><li><a href=#analysis>Analysis</a><ul><li><a href=#diving-deeper>Diving deeper</a></li><li><a href=#a-step-back>A step back</a></li><li><a href=#junction-types>Junction types</a></li><li><a href=#block-a>Block A</a></li><li><a href=#block-b>Block B</a></li><li><a href=#oh-yeah-its-all-coming-together>Oh yeah, it&rsquo;s all coming together</a></li></ul></li><li><a href=#building-with-verilog>Building with Verilog</a></li><li><a href=#solving-with-modelsim>Solving with ModelSim</a><ul><li><a href=#coming-up-with-some-ideas>Coming up with some ideas</a></li><li><a href=#writing-the-testbench>Writing the testbench</a></li></ul></li></ul></nav></details><img src=media/challenge.png alt="Challenge info" loading=lazy><p>I unfortunately did not solve this during the competition period, but mildly obsessed over this for about a week after the competition. Here&rsquo;s how I lost way too many hours of sleep.</p><p>TL;DR - Realise this was all just <a href=#diving-deeper>one big digital logic circuit</a>, recognise the different <a href=#junction-types>logic gates and connections</a>, <a href=#building-with-verilog>build it all</a> in Verilog, solve with some <a href=#writing-the-testbench>ModelSim bruteforcing</a>, and get enough sleep.</p><h2 id=introduction>Introduction</h2><p>The challenge provides us with a <a href=https://github.com/google/google-ctf/tree/master/2021/quals/hw-parking/attachments target=_blank rel=noreferrer>zip file</a>
+containing a python script that takes in some data (level1 / level2) to build the challenge. run.sh just serves as an easy way to progress from level1 to level2.</p><h3 id=level-1>Level 1</h3><p><img src=media/level1.png alt="Easy level 1 intro to the puzzle" loading=lazy><br>Well this doesn&rsquo;t seem too bad&mldr; We&rsquo;re told (in the command line) that the goal is to simply move the red car from its original position, and the green block will encode the flag. Just shift the blocks around and it&rsquo;s as simple as that. Bring on level 2!</p><h3 id=level-2>Level 2</h3><p><img src=media/level2.png alt="Level 20000 (not a typo) intro to the puzzle" loading=lazy>
+Well&mldr; I can almost see my life flashing before my eyes. Solving this through the matplotlib graph it creates would be a pain (especially given that it took about a minute for matplotlib to load the graph itself). Clearly, we need to analyse how it&rsquo;s getting the map.</p><h2 id=analysis>Analysis</h2><p>Let&rsquo;s take a look at the <a href=https://github.com/google/google-ctf/blob/master/2021/quals/hw-parking/attachments/game.py target=_blank rel=noreferrer>game.py</a>
+script first.<br>A quick skim through the code reveals that it parses the data determined by the level1/level2 file, builds the world&rsquo;s worst carpark, and allows for the user to click to move cars. There are a few important things to note:</p><ul><li>First, the red block has &ldquo;movable&rdquo; attribute as -2, and if the script detects that the block has moved from its original position, the <code>printflag()</code> command is called.</li><li>Second, it adds the cars that have &ldquo;moveable&rdquo; attribute equal to -1 to a flagblocks array. These cars are the green blocks that encode the flag (in binary).</li><li>On top of that, the each car represents each bit of the flag, and is determined by whether the car has to move from its original position (moved = 1, otherwise 0).</li><li>And finally, the bits of the flag are separated into bytes (8 bits) and reversed before being converted to ASCII and printed.</li></ul><p>With all those in mind, we have a good enough overview of what we need to do: Determine which green blocks need to be moved in order for the red block to move.</p><p>Now the hours of &ldquo;fun&rdquo; begin.</p><h3 id=diving-deeper>Diving deeper</h3><p>Whilst we have a general idea of how everything works, how in the world do we apply it here? Most importantly, where in the world are the green and red blocks?
 <img src=media/grepmylife.png alt="GREP-ing like I've never GREP'd before" loading=lazy>
-Doing a quick grep on the level2 file (based on -1 == green block, and -2 == red block), we can see that there are a lot of green blocks (64 in fact) all in a vertical line, and one singular red block in a tiny corner. We know this, as the python script parses the file info as (x,y,w,h,movable). On top of that, the green blocks are added to the flagblocks array from top to bottom, meaning the top most green block represents bit 0, and the bottom most green block represents bit 63.</p>
-<p>Time to zoom in even more! Luckily the python script uses PIL to save the graph as a png, so we won&rsquo;t have to deal with the 10 seconds it takes for matplotlib to zoom in.
+Doing a quick grep on the level2 file (based on -1 == green block, and -2 == red block), we can see that there are a lot of green blocks (64 in fact) all in a vertical line, and one singular red block in a tiny corner. We know this, as the python script parses the file info as (x,y,w,h,movable). On top of that, the green blocks are added to the flagblocks array from top to bottom, meaning the top most green block represents bit 0, and the bottom most green block represents bit 63.</p><p>Time to zoom in even more! Luckily the python script uses PIL to save the graph as a png, so we won&rsquo;t have to deal with the 10 seconds it takes for matplotlib to zoom in.
 <img src=media/carspotting.png alt="I try my hardest to point out that those rectangles are cars" loading=lazy>
 The scariest thing about this, is that this is only a small section of the whole bigger picture. Anyone hoping to somehow solve this by hand ought to be reported for insanity.
 <img src=media/freeredcar.png alt="Red car must be freed from world's worst carpark" loading=lazy>
-Working backwards from the red block, it&rsquo;s clear that the vertical line of grey blocks must move. But we seem to hit a jam where the top circled region is. In order for the grey blocks to move up, the long skinny grey block, as well as the shorter block (inside the circled region) must both move. Looking at this, if we consider the two arrows pointing toward the circle as inputs, and the arrow pointing away from the circle as outputs, this is starting to look like an AND logic gate! We will consider the inputs as whether there&rsquo;s &ldquo;a flow/gap&rdquo; coming in. So if the cars can move then it&rsquo;ll be a 1, otherwise it&rsquo;s 0.<br>
-This can get confusing, as the gap moves in the opposite direction to the cars, but with enough annotating and imagination, we might be able to figure this one out.</p>
-<h3 id=a-step-back>A step back</h3>
-<p>
-<img src=media/stepback.png alt="Breaking carpark into blocks" loading=lazy>
-Ignoring the questionable colour choices I&rsquo;ve made, if we step back to look at the bigger picture, it&rsquo;s clear there are two types of &ldquo;blocks&rdquo; just repeated over and over. Block A seems to be a 4 input, 2 output block of some sort, and B seems to be a big 4 input, 4 output block. This makes analysis so much easier, as we only need to determine the behaviour of two blocks. So let&rsquo;s get started.</p>
-<h3 id=junction-types>Junction types</h3>
-<p>But before we jump in on analysing each block, we must first identify all the different types of &ldquo;junctions&rdquo;. These junctions can be a real nuisance, but they help simplify the blocks down to a simple logic gate. Although difficult to determine at first, it&rsquo;s possible to figure out each if we know which way the traffic (gap) flows, and the output behaviour based on different inputs. I&rsquo;ll be giving them random names that are definitely not their official names, but I do like to pretend they form some superhero team (a digital logic version of The Avengers?).</p>
-<h4 id=the-and>The And</h4>
-<p>
-<img src=media/and.png alt="Attempt at pointing out an AND gate" loading=lazy>
-Just your regular AND gate.</p>
-<h4 id=the-or>Th(e) Or</h4>
-<p>
-<img src=media/thor.png alt="Digital Systems knock off version of Thor" loading=lazy>
-A proud member of The Avengers. Also happens to be a classic digital logic gate.</p>
-<h4 id=the-criss-cross>The Criss Cross</h4>
-<p>
-<img src=media/crisscross.png alt="Cross junction of the rectangular blocks, but I think criss cross sounds better" loading=lazy>
-These allow for two wires to cross over each other without affecting each other. In this case, the vertical flow has no effect on the horizontal flow.</p>
-<h4 id=the-splitter>The Splitter</h4>
-<p>
-<img src=media/splitter.png alt="One input splits into two" loading=lazy>
-Takes in one input, and splits it into two: essentially clones an input.</p>
-<h3 id=block-a>Block A</h3>
-<p>
-<img src=media/blocka.png alt="Analysing block A" loading=lazy>
-If we let the flow of the gap go from left to right in this image (following the rough direction of the red arrows), we can simplify this block down to a simple logic circuit. As it turns out, the &ldquo;4 inputs&rdquo; can be treated as 2 inputs, as one is always the reverse of the other. Even better, the &ldquo;2 outputs&rdquo; can also be seen as only 1 output, as <code>not(A xor B)</code> is the opposite of <code>A xor B</code>.</p>
-<h3 id=block-b>Block B</h3>
-<p>
-<img src=media/blockb.png alt="Analysing block B" loading=lazy>
-The same sort of logic can also be applied to block type B. This block can be modelled as a 2 input, 2 output logic gate, where the top output is <code>not(A xor B)</code> and the bottom is <code>A or B</code>.</p>
-<h3 id=oh-yeah-its-all-coming-together>Oh yeah, it&rsquo;s all coming together</h3>
-<p>
-<img src=media/blockslabelled.png alt="Combining blocks A and B" loading=lazy>
-Now to link all these different blocks together. Based on the above labels (each row is assigned an index between 0 and 63, and each column is a letter between A and G), we have the following connections:</p>
-<pre tabindex=0><code>A:
+Working backwards from the red block, it&rsquo;s clear that the vertical line of grey blocks must move. But we seem to hit a jam where the top circled region is. In order for the grey blocks to move up, the long skinny grey block, as well as the shorter block (inside the circled region) must both move. Looking at this, if we consider the two arrows pointing toward the circle as inputs, and the arrow pointing away from the circle as outputs, this is starting to look like an AND logic gate! We will consider the inputs as whether there&rsquo;s &ldquo;a flow/gap&rdquo; coming in. So if the cars can move then it&rsquo;ll be a 1, otherwise it&rsquo;s 0.<br>This can get confusing, as the gap moves in the opposite direction to the cars, but with enough annotating and imagination, we might be able to figure this one out.</p><h3 id=a-step-back>A step back</h3><p><img src=media/stepback.png alt="Breaking carpark into blocks" loading=lazy>
+Ignoring the questionable colour choices I&rsquo;ve made, if we step back to look at the bigger picture, it&rsquo;s clear there are two types of &ldquo;blocks&rdquo; just repeated over and over. Block A seems to be a 4 input, 2 output block of some sort, and B seems to be a big 4 input, 4 output block. This makes analysis so much easier, as we only need to determine the behaviour of two blocks. So let&rsquo;s get started.</p><h3 id=junction-types>Junction types</h3><p>But before we jump in on analysing each block, we must first identify all the different types of &ldquo;junctions&rdquo;. These junctions can be a real nuisance, but they help simplify the blocks down to a simple logic gate. Although difficult to determine at first, it&rsquo;s possible to figure out each if we know which way the traffic (gap) flows, and the output behaviour based on different inputs. I&rsquo;ll be giving them random names that are definitely not their official names, but I do like to pretend they form some superhero team (a digital logic version of The Avengers?).</p><h4 id=the-and>The And</h4><p><img src=media/and.png alt="Attempt at pointing out an AND gate" loading=lazy>
+Just your regular AND gate.</p><h4 id=the-or>Th(e) Or</h4><p><img src=media/thor.png alt="Digital Systems knock off version of Thor" loading=lazy>
+A proud member of The Avengers. Also happens to be a classic digital logic gate.</p><h4 id=the-criss-cross>The Criss Cross</h4><p><img src=media/crisscross.png alt="Cross junction of the rectangular blocks, but I think criss cross sounds better" loading=lazy>
+These allow for two wires to cross over each other without affecting each other. In this case, the vertical flow has no effect on the horizontal flow.</p><h4 id=the-splitter>The Splitter</h4><p><img src=media/splitter.png alt="One input splits into two" loading=lazy>
+Takes in one input, and splits it into two: essentially clones an input.</p><h3 id=block-a>Block A</h3><p><img src=media/blocka.png alt="Analysing block A" loading=lazy>
+If we let the flow of the gap go from left to right in this image (following the rough direction of the red arrows), we can simplify this block down to a simple logic circuit. As it turns out, the &ldquo;4 inputs&rdquo; can be treated as 2 inputs, as one is always the reverse of the other. Even better, the &ldquo;2 outputs&rdquo; can also be seen as only 1 output, as <code>not(A xor B)</code> is the opposite of <code>A xor B</code>.</p><h3 id=block-b>Block B</h3><p><img src=media/blockb.png alt="Analysing block B" loading=lazy>
+The same sort of logic can also be applied to block type B. This block can be modelled as a 2 input, 2 output logic gate, where the top output is <code>not(A xor B)</code> and the bottom is <code>A or B</code>.</p><h3 id=oh-yeah-its-all-coming-together>Oh yeah, it&rsquo;s all coming together</h3><p><img src=media/blockslabelled.png alt="Combining blocks A and B" loading=lazy>
+Now to link all these different blocks together. Based on the above labels (each row is assigned an index between 0 and 63, and each column is a letter between A and G), we have the following connections:</p><pre tabindex=0><code>A:
 inputs: car, in1
 outputs: A[i]
 
@@ -165,191 +43,139 @@ outputs: F1[i], F2[i]
 G:
 inputs: in3, F1[i]
 outputs: G[i]
-</code></pre><h4 id=rogue-inputs>Rogue Inputs</h4>
-<p>
-<img src=media/cheekyinput.png alt="Rogue inputs" loading=lazy>
-There seem to be extra unknown variables in the above connection rules. Clearly <code>car</code> represents the green block inputs, but what are <code>in1</code>, <code>in2</code>, and <code>in3</code>? As it turns out, some blocks have some cheeky external input, as shown in the example above. When modelling the entire circuit, I will only take into account the top of the inputs (in the example above, the top block will have 0 as its extra input, and the bottom block will have 1 as its extra input).</p>
-<h2 id=building-with-verilog>Building with Verilog</h2>
-<p>Very smart CTF professionals would resort to <a href=https://theory.stanford.edu/~nikolaj/programmingz3.html target=_blank rel=noreferrer>Z3</a>
+</code></pre><h4 id=rogue-inputs>Rogue Inputs</h4><p><img src=media/cheekyinput.png alt="Rogue inputs" loading=lazy>
+There seem to be extra unknown variables in the above connection rules. Clearly <code>car</code> represents the green block inputs, but what are <code>in1</code>, <code>in2</code>, and <code>in3</code>? As it turns out, some blocks have some cheeky external input, as shown in the example above. When modelling the entire circuit, I will only take into account the top of the inputs (in the example above, the top block will have 0 as its extra input, and the bottom block will have 1 as its extra input).</p><h2 id=building-with-verilog>Building with Verilog</h2><p>Very smart CTF professionals would resort to <a href=https://theory.stanford.edu/~nikolaj/programmingz3.html target=_blank rel=noreferrer>Z3</a>
 or any other <a href=https://en.wikipedia.org/wiki/Satisfiability_modulo_theories target=_blank rel=noreferrer>SMT/SAT</a>
-solver. So naturally I decided to turn to Verilog instead.</p>
-<p>Verilog is a hardware description language that can be used to model electronic systems. In this case, we can use it to describe the digital circuit we&rsquo;re given, and then hopefully find a way to determine the correct input in order to make that red block move. Given that each block can be modelled as a logic gate, we can treat each block as its own module, where it has 2 inputs, and either one or two outputs.</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-verilog data-lang=verilog><span style=color:#66d9ef>module</span> lil_xor(<span style=color:#66d9ef>input</span> A,B, <span style=color:#66d9ef>output</span> out_xor);
-	<span style=color:#66d9ef>assign</span> out_xor <span style=color:#f92672>=</span> (A<span style=color:#f92672>==</span>B);
-<span style=color:#66d9ef>endmodule</span>
-
-<span style=color:#66d9ef>module</span> big_boi(<span style=color:#66d9ef>input</span> A,B, <span style=color:#66d9ef>output</span> out_eq,out_or);
-	<span style=color:#66d9ef>assign</span> out_eq <span style=color:#f92672>=</span> (A<span style=color:#f92672>==</span>B);
-	<span style=color:#66d9ef>assign</span> out_or <span style=color:#f92672>=</span> A <span style=color:#f92672>|</span> B;
-<span style=color:#66d9ef>endmodule</span>
-</code></pre></div><p><code>lil_xor</code> is the 2 input 1 output block (its name is misleading, but let&rsquo;s pretend I named it correctly), and <code>big_boi</code> is the bigger cousin, with 2 inputs and 2 outputs.</p>
-<p>Now to implement all the connections with some Verilog magic.</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Verilog data-lang=Verilog><span style=color:#66d9ef>module</span> parking(<span style=color:#66d9ef>input</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>]in,<span style=color:#66d9ef>output</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>]out);
-	<span style=color:#66d9ef>reg</span> [<span style=color:#ae81ff>0</span><span style=color:#f92672>:</span><span style=color:#ae81ff>63</span>] in1 <span style=color:#f92672>=</span> <span style=color:#ae81ff>64</span><span style=color:#ae81ff>&#39;b1000010011111100010010101000010010000100111111000100101010000100</span>;
-	<span style=color:#66d9ef>reg</span> [<span style=color:#ae81ff>0</span><span style=color:#f92672>:</span><span style=color:#ae81ff>63</span>] in2 <span style=color:#f92672>=</span> <span style=color:#ae81ff>64</span><span style=color:#ae81ff>&#39;b0001001100110111000100110011011100010011001101110001001100110111</span>;
-	<span style=color:#66d9ef>reg</span> [<span style=color:#ae81ff>0</span><span style=color:#f92672>:</span><span style=color:#ae81ff>63</span>] in3 <span style=color:#f92672>=</span> <span style=color:#ae81ff>64</span><span style=color:#ae81ff>&#39;b1010111111011110001100101110101001010101011110100101011100000111</span>;
-	<span style=color:#66d9ef>wire</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>]out1;
-	<span style=color:#75715e>// starting 64 car blocks - contains fixed input
-</span><span style=color:#75715e></span>	<span style=color:#66d9ef>genvar</span> i;
-	<span style=color:#66d9ef>generate</span>
-		<span style=color:#66d9ef>for</span> (i <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>; i <span style=color:#f92672>&lt;</span> <span style=color:#ae81ff>64</span>; i<span style=color:#f92672>=</span>i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>begin</span> <span style=color:#f92672>:</span> ricky
-			<span style=color:#75715e>// invert car input (0 means A = 1, 1 means A = 0)
-</span><span style=color:#75715e></span>			lil_xor test(<span style=color:#f92672>~</span>(in[i]),in1[i],out1[i]);
-		<span style=color:#66d9ef>end</span>
-	<span style=color:#66d9ef>endgenerate</span>
-
-	<span style=color:#75715e>// second block
-</span><span style=color:#75715e></span>	<span style=color:#66d9ef>wire</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>]out2, out3;
-	<span style=color:#66d9ef>generate</span>
-		<span style=color:#66d9ef>for</span> (i<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>; i <span style=color:#f92672>&lt;</span> <span style=color:#ae81ff>64</span>; i<span style=color:#f92672>=</span>i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>begin</span> <span style=color:#f92672>:</span> bobby
-			<span style=color:#66d9ef>if</span> (i<span style=color:#f92672>==</span><span style=color:#ae81ff>0</span>) big_boi test(<span style=color:#ae81ff>1</span><span style=color:#ae81ff>&#39;b1</span>,out1[i],out2[i],out3[i]);
-			<span style=color:#66d9ef>else</span>
-				big_boi test(out1[i<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>],out1[i],out2[i],out3[i]);
-		<span style=color:#66d9ef>end</span>
-	<span style=color:#66d9ef>endgenerate</span>
-
-	<span style=color:#75715e>// third block
-</span><span style=color:#75715e></span>	<span style=color:#66d9ef>wire</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>] out4, out5;
-	<span style=color:#66d9ef>generate</span>
-		<span style=color:#66d9ef>for</span> (i<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>;i<span style=color:#f92672>&lt;</span><span style=color:#ae81ff>64</span>;i<span style=color:#f92672>=</span>i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>begin</span> <span style=color:#f92672>:</span> robby
-				<span style=color:#66d9ef>if</span> (i<span style=color:#f92672>==</span><span style=color:#ae81ff>0</span>) big_boi test(out2[i],<span style=color:#ae81ff>1</span><span style=color:#ae81ff>&#39;b1</span>,out4[i],out5[i]);
-				<span style=color:#66d9ef>else</span> big_boi test(out2[i],out5[i<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>]<span style=color:#f92672>&amp;</span>out3[i<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>],out4[i],out5[i]);
-		<span style=color:#66d9ef>end</span>
-	<span style=color:#66d9ef>endgenerate</span>
-
-	<span style=color:#75715e>// fourth block
-</span><span style=color:#75715e></span>	<span style=color:#66d9ef>wire</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>] out6;
-	<span style=color:#66d9ef>generate</span>
-		<span style=color:#66d9ef>for</span> (i<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>;i<span style=color:#f92672>&lt;</span><span style=color:#ae81ff>64</span>;i<span style=color:#f92672>=</span>i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>begin</span> <span style=color:#f92672>:</span> bibby
-			<span style=color:#66d9ef>if</span> (i<span style=color:#f92672>==</span><span style=color:#ae81ff>63</span>) lil_xor test(out4[i],<span style=color:#ae81ff>1</span><span style=color:#ae81ff>&#39;b1</span>,out6[i]);
-			<span style=color:#66d9ef>else</span> lil_xor test(out4[i],out4[i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>],out6[i]);
-		<span style=color:#66d9ef>end</span>
-	<span style=color:#66d9ef>endgenerate</span>
-
-	<span style=color:#75715e>// fifth block - contains fixed input
-</span><span style=color:#75715e></span>	<span style=color:#66d9ef>wire</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>] out7, out8;
-	<span style=color:#66d9ef>generate</span>
-		<span style=color:#66d9ef>for</span> (i<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>;i<span style=color:#f92672>&lt;</span><span style=color:#ae81ff>64</span>;i<span style=color:#f92672>=</span>i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>begin</span> <span style=color:#f92672>:</span> timmy
-			<span style=color:#66d9ef>if</span> (i <span style=color:#f92672>==</span> <span style=color:#ae81ff>63</span>) big_boi test(out6[<span style=color:#ae81ff>0</span>],in2[i], out7[i],out8[i]);
-			<span style=color:#66d9ef>else</span> big_boi test(out6[i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>],in2[i],out7[i],out8[i]);
-		<span style=color:#66d9ef>end</span>
-	<span style=color:#66d9ef>endgenerate</span>
-
-	<span style=color:#75715e>// sixth block
-</span><span style=color:#75715e></span>	<span style=color:#66d9ef>wire</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>] out9, out10;
-	<span style=color:#66d9ef>generate</span>
-		<span style=color:#66d9ef>for</span> (i<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>;i<span style=color:#f92672>&lt;</span><span style=color:#ae81ff>64</span>;i<span style=color:#f92672>=</span>i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>begin</span> <span style=color:#f92672>:</span> tommy
-			<span style=color:#66d9ef>if</span> (i<span style=color:#f92672>==</span><span style=color:#ae81ff>0</span>) big_boi test(out7[i],<span style=color:#ae81ff>1</span><span style=color:#ae81ff>&#39;b1</span>,out9[i],out10[i]);
-			<span style=color:#66d9ef>else</span> big_boi test(out7[i],out8[i<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>]<span style=color:#f92672>&amp;</span>out10[i<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>],out9[i],out10[i]);
-		<span style=color:#66d9ef>end</span>
-	<span style=color:#66d9ef>endgenerate</span>
-
-	<span style=color:#75715e>// seventh block - contains fixed input
-</span><span style=color:#75715e></span>	<span style=color:#66d9ef>wire</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>] out11;
-	<span style=color:#66d9ef>generate</span>
-		<span style=color:#66d9ef>for</span> (i<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>;i<span style=color:#f92672>&lt;</span><span style=color:#ae81ff>64</span>;i<span style=color:#f92672>=</span>i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>begin</span> <span style=color:#f92672>:</span> bob
-			lil_xor test(in3[i], out9[i], out11[i]);
-		<span style=color:#66d9ef>end</span>
-	<span style=color:#66d9ef>endgenerate</span>
-	<span style=color:#66d9ef>assign</span> out <span style=color:#f92672>=</span> out11;
-<span style=color:#66d9ef>endmodule</span>
-</code></pre></div><p>Et voilà! This is essentially the Verilog version of the connection equations (where A-G are blocks 1-7 respectively). Just a few strange Verilog things to note:</p>
-<ul>
-<li><code>[0:63]</code> means the most significant bit (MSB) is bit #0, and least significant bit (LSB) is bit #63, whereas <code>[63:0]</code> means MSB is bit #63, and LSB is bit #0</li>
-<li><code>genvar</code> is like a regular integer in programming languages, but in Verilog, <code>genvar</code> is required so that it can be used to instantiate multiple instances of the same module, because regular integers just aren&rsquo;t good enough for verilog</li>
-<li>the for loops in generate blocks must be named, so that Verilog (simulators) can differentiate between each instance of the module
-<ul>
-<li>obviously ricky, bobby, robby, bibby, timmy, tommy and bob are fantastic names for these</li>
-</ul>
-</li>
-</ul>
-<p>The <code>in1</code>, <code>in2</code>, and <code>in3</code> were obtained by scrolling through the map and noting down 1&rsquo;s and 0&rsquo;s, whilst simultaneously praying that no mistakes were made during transcription.</p>
-<h2 id=solving-with-modelsim>Solving with ModelSim</h2>
-<p>Now comes the part that shouldn&rsquo;t have taken over a week to figure out and get working properly, but did nonetheless.</p>
-<h3 id=coming-up-with-some-ideas>Coming up with some ideas</h3>
-<h4 id=idea-1-use-quartus-rtl-viewer-to-simplify-the-circuit-and-give-us-a-solution>Idea 1: Use Quartus' RTL viewer to simplify the circuit and give us a solution</h4>
-<p>I had been using Quartus (and hence Verilog + ModelSim) for a semester for uni, so my mind went straight to &ldquo;how can I justify the hours I spent reading Verilog and Quartus documentation&rdquo;. Despite this, I had completely forgotten that Quartus comes with an RTL viewer that essentially gives a high level representation of the digital circuit (i.e. using logic gates). On top of that, it&rsquo;s also smart enough to simplify more complicated circuits. So thanks to a nudge from a Verilog Veteran, I decided to give it a crack.</p>
-<p>
-<img src=media/simplification.png alt="Quartus fails to simplify" loading=lazy>
+solver. So naturally I decided to turn to Verilog instead.</p><p>Verilog is a hardware description language that can be used to model electronic systems. In this case, we can use it to describe the digital circuit we&rsquo;re given, and then hopefully find a way to determine the correct input in order to make that red block move. Given that each block can be modelled as a logic gate, we can treat each block as its own module, where it has 2 inputs, and either one or two outputs.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-verilog data-lang=verilog><span style=display:flex><span><span style=color:#66d9ef>module</span> lil_xor(<span style=color:#66d9ef>input</span> A,B, <span style=color:#66d9ef>output</span> out_xor);
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>assign</span> out_xor <span style=color:#f92672>=</span> (A<span style=color:#f92672>==</span>B);
+</span></span><span style=display:flex><span><span style=color:#66d9ef>endmodule</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>module</span> big_boi(<span style=color:#66d9ef>input</span> A,B, <span style=color:#66d9ef>output</span> out_eq,out_or);
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>assign</span> out_eq <span style=color:#f92672>=</span> (A<span style=color:#f92672>==</span>B);
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>assign</span> out_or <span style=color:#f92672>=</span> A <span style=color:#f92672>|</span> B;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>endmodule</span>
+</span></span></code></pre></div><p><code>lil_xor</code> is the 2 input 1 output block (its name is misleading, but let&rsquo;s pretend I named it correctly), and <code>big_boi</code> is the bigger cousin, with 2 inputs and 2 outputs.</p><p>Now to implement all the connections with some Verilog magic.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Verilog data-lang=Verilog><span style=display:flex><span><span style=color:#66d9ef>module</span> parking(<span style=color:#66d9ef>input</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>]in,<span style=color:#66d9ef>output</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>]out);
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>reg</span> [<span style=color:#ae81ff>0</span><span style=color:#f92672>:</span><span style=color:#ae81ff>63</span>] in1 <span style=color:#f92672>=</span> <span style=color:#ae81ff>64</span><span style=color:#ae81ff>&#39;b1000010011111100010010101000010010000100111111000100101010000100</span>;
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>reg</span> [<span style=color:#ae81ff>0</span><span style=color:#f92672>:</span><span style=color:#ae81ff>63</span>] in2 <span style=color:#f92672>=</span> <span style=color:#ae81ff>64</span><span style=color:#ae81ff>&#39;b0001001100110111000100110011011100010011001101110001001100110111</span>;
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>reg</span> [<span style=color:#ae81ff>0</span><span style=color:#f92672>:</span><span style=color:#ae81ff>63</span>] in3 <span style=color:#f92672>=</span> <span style=color:#ae81ff>64</span><span style=color:#ae81ff>&#39;b1010111111011110001100101110101001010101011110100101011100000111</span>;
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>wire</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>]out1;
+</span></span><span style=display:flex><span>	<span style=color:#75715e>// starting 64 car blocks - contains fixed input
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>	<span style=color:#66d9ef>genvar</span> i;
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>generate</span>
+</span></span><span style=display:flex><span>		<span style=color:#66d9ef>for</span> (i <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>; i <span style=color:#f92672>&lt;</span> <span style=color:#ae81ff>64</span>; i<span style=color:#f92672>=</span>i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>begin</span> <span style=color:#f92672>:</span> ricky
+</span></span><span style=display:flex><span>			<span style=color:#75715e>// invert car input (0 means A = 1, 1 means A = 0)
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>			lil_xor test(<span style=color:#f92672>~</span>(in[i]),in1[i],out1[i]);
+</span></span><span style=display:flex><span>		<span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>endgenerate</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>	<span style=color:#75715e>// second block
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>	<span style=color:#66d9ef>wire</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>]out2, out3;
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>generate</span>
+</span></span><span style=display:flex><span>		<span style=color:#66d9ef>for</span> (i<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>; i <span style=color:#f92672>&lt;</span> <span style=color:#ae81ff>64</span>; i<span style=color:#f92672>=</span>i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>begin</span> <span style=color:#f92672>:</span> bobby
+</span></span><span style=display:flex><span>			<span style=color:#66d9ef>if</span> (i<span style=color:#f92672>==</span><span style=color:#ae81ff>0</span>) big_boi test(<span style=color:#ae81ff>1</span><span style=color:#ae81ff>&#39;b1</span>,out1[i],out2[i],out3[i]);
+</span></span><span style=display:flex><span>			<span style=color:#66d9ef>else</span>
+</span></span><span style=display:flex><span>				big_boi test(out1[i<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>],out1[i],out2[i],out3[i]);
+</span></span><span style=display:flex><span>		<span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>endgenerate</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>	<span style=color:#75715e>// third block
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>	<span style=color:#66d9ef>wire</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>] out4, out5;
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>generate</span>
+</span></span><span style=display:flex><span>		<span style=color:#66d9ef>for</span> (i<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>;i<span style=color:#f92672>&lt;</span><span style=color:#ae81ff>64</span>;i<span style=color:#f92672>=</span>i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>begin</span> <span style=color:#f92672>:</span> robby
+</span></span><span style=display:flex><span>				<span style=color:#66d9ef>if</span> (i<span style=color:#f92672>==</span><span style=color:#ae81ff>0</span>) big_boi test(out2[i],<span style=color:#ae81ff>1</span><span style=color:#ae81ff>&#39;b1</span>,out4[i],out5[i]);
+</span></span><span style=display:flex><span>				<span style=color:#66d9ef>else</span> big_boi test(out2[i],out5[i<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>]<span style=color:#f92672>&amp;</span>out3[i<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>],out4[i],out5[i]);
+</span></span><span style=display:flex><span>		<span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>endgenerate</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>	<span style=color:#75715e>// fourth block
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>	<span style=color:#66d9ef>wire</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>] out6;
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>generate</span>
+</span></span><span style=display:flex><span>		<span style=color:#66d9ef>for</span> (i<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>;i<span style=color:#f92672>&lt;</span><span style=color:#ae81ff>64</span>;i<span style=color:#f92672>=</span>i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>begin</span> <span style=color:#f92672>:</span> bibby
+</span></span><span style=display:flex><span>			<span style=color:#66d9ef>if</span> (i<span style=color:#f92672>==</span><span style=color:#ae81ff>63</span>) lil_xor test(out4[i],<span style=color:#ae81ff>1</span><span style=color:#ae81ff>&#39;b1</span>,out6[i]);
+</span></span><span style=display:flex><span>			<span style=color:#66d9ef>else</span> lil_xor test(out4[i],out4[i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>],out6[i]);
+</span></span><span style=display:flex><span>		<span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>endgenerate</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>	<span style=color:#75715e>// fifth block - contains fixed input
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>	<span style=color:#66d9ef>wire</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>] out7, out8;
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>generate</span>
+</span></span><span style=display:flex><span>		<span style=color:#66d9ef>for</span> (i<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>;i<span style=color:#f92672>&lt;</span><span style=color:#ae81ff>64</span>;i<span style=color:#f92672>=</span>i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>begin</span> <span style=color:#f92672>:</span> timmy
+</span></span><span style=display:flex><span>			<span style=color:#66d9ef>if</span> (i <span style=color:#f92672>==</span> <span style=color:#ae81ff>63</span>) big_boi test(out6[<span style=color:#ae81ff>0</span>],in2[i], out7[i],out8[i]);
+</span></span><span style=display:flex><span>			<span style=color:#66d9ef>else</span> big_boi test(out6[i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>],in2[i],out7[i],out8[i]);
+</span></span><span style=display:flex><span>		<span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>endgenerate</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>	<span style=color:#75715e>// sixth block
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>	<span style=color:#66d9ef>wire</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>] out9, out10;
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>generate</span>
+</span></span><span style=display:flex><span>		<span style=color:#66d9ef>for</span> (i<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>;i<span style=color:#f92672>&lt;</span><span style=color:#ae81ff>64</span>;i<span style=color:#f92672>=</span>i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>begin</span> <span style=color:#f92672>:</span> tommy
+</span></span><span style=display:flex><span>			<span style=color:#66d9ef>if</span> (i<span style=color:#f92672>==</span><span style=color:#ae81ff>0</span>) big_boi test(out7[i],<span style=color:#ae81ff>1</span><span style=color:#ae81ff>&#39;b1</span>,out9[i],out10[i]);
+</span></span><span style=display:flex><span>			<span style=color:#66d9ef>else</span> big_boi test(out7[i],out8[i<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>]<span style=color:#f92672>&amp;</span>out10[i<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>],out9[i],out10[i]);
+</span></span><span style=display:flex><span>		<span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>endgenerate</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>	<span style=color:#75715e>// seventh block - contains fixed input
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>	<span style=color:#66d9ef>wire</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>] out11;
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>generate</span>
+</span></span><span style=display:flex><span>		<span style=color:#66d9ef>for</span> (i<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>;i<span style=color:#f92672>&lt;</span><span style=color:#ae81ff>64</span>;i<span style=color:#f92672>=</span>i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>begin</span> <span style=color:#f92672>:</span> bob
+</span></span><span style=display:flex><span>			lil_xor test(in3[i], out9[i], out11[i]);
+</span></span><span style=display:flex><span>		<span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>endgenerate</span>
+</span></span><span style=display:flex><span>	<span style=color:#66d9ef>assign</span> out <span style=color:#f92672>=</span> out11;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>endmodule</span>
+</span></span></code></pre></div><p>Et voilà! This is essentially the Verilog version of the connection equations (where A-G are blocks 1-7 respectively). Just a few strange Verilog things to note:</p><ul><li><code>[0:63]</code> means the most significant bit (MSB) is bit #0, and least significant bit (LSB) is bit #63, whereas <code>[63:0]</code> means MSB is bit #63, and LSB is bit #0</li><li><code>genvar</code> is like a regular integer in programming languages, but in Verilog, <code>genvar</code> is required so that it can be used to instantiate multiple instances of the same module, because regular integers just aren&rsquo;t good enough for verilog</li><li>the for loops in generate blocks must be named, so that Verilog (simulators) can differentiate between each instance of the module<ul><li>obviously ricky, bobby, robby, bibby, timmy, tommy and bob are fantastic names for these</li></ul></li></ul><p>The <code>in1</code>, <code>in2</code>, and <code>in3</code> were obtained by scrolling through the map and noting down 1&rsquo;s and 0&rsquo;s, whilst simultaneously praying that no mistakes were made during transcription.</p><h2 id=solving-with-modelsim>Solving with ModelSim</h2><p>Now comes the part that shouldn&rsquo;t have taken over a week to figure out and get working properly, but did nonetheless.</p><h3 id=coming-up-with-some-ideas>Coming up with some ideas</h3><h4 id=idea-1-use-quartus-rtl-viewer-to-simplify-the-circuit-and-give-us-a-solution>Idea 1: Use Quartus&rsquo; RTL viewer to simplify the circuit and give us a solution</h4><p>I had been using Quartus (and hence Verilog + ModelSim) for a semester for uni, so my mind went straight to &ldquo;how can I justify the hours I spent reading Verilog and Quartus documentation&rdquo;. Despite this, I had completely forgotten that Quartus comes with an RTL viewer that essentially gives a high level representation of the digital circuit (i.e. using logic gates). On top of that, it&rsquo;s also smart enough to simplify more complicated circuits. So thanks to a nudge from a Verilog Veteran, I decided to give it a crack.</p><p><img src=media/simplification.png alt="Quartus fails to simplify" loading=lazy>
 Quartus has let me down once again. After many attempts to break the circuit down to allow Quartus to simplify, there was no way for it to give me a small enough circuit to easily solve. Keep in mind, the above image was just page 1 of 3.
-With Quartus unable to help me with this, I decided to turn to ModelSim.</p>
-<p>ModelSim is lovely, in that it simulates Verilog modules given a testbench. It also has a bunch of nice graphical features (waveforms mainly), but we&rsquo;ll probably just stick with the console/terminal outputs for this.<br>
-Now we just need to write a testbench that will solve the problem for us. In this case, we need to determine what 64 bit input will give us the output of 64 bits of 1&rsquo;s.</p>
-<h4 id=idea-2-bruteforce-all-64-bits>Idea 2: Bruteforce all 64 bits</h4>
-<p>Although <em>technically</em> possible, ModelSim is unfortunately way too slow to bruteforce 64 bits. By the time it finds the solution, we&rsquo;ll all probably be ruled over by giant kittens that shoot lasers out of their eyes, so that&rsquo;s a no go.</p>
-<h4 id=idea-3-knowing-that-the-flag-is-ascii-bruteforce-56-bits-since-we-know-that-every-8th-bit-is-a-0>Idea 3: Knowing that the flag is ASCII, bruteforce 56 bits, since we know that every 8th bit is a 0</h4>
-<p>This certainly reduces the amount of time needed to bruteforce, however, whilst we probably won&rsquo;t be ruled by laser shooting kittens by the time it finishes, it will probably take longer than the average lifespan of a human. I don&rsquo;t know about you, but I&rsquo;d like to be alive before it finishes.</p>
-<h4 id=idea-4-bruteforce-n-bits-at-a-time-where-n-is-a-reasonable-number-of-bits-that-can-be-bruteforced>Idea 4: Bruteforce n bits at a time, where n is a reasonable number of bits that can be bruteforced</h4>
-<p>Now this is more like it. Now we just need to find the sweet spot of a reasonable number. Since each bit of the input affects the output of its neighbouring bits (i.e. changing bit 5 affects the output of bit 6), and it&rsquo;s also &ldquo;cyclic&rdquo; (i.e. bit 0 affects the output of bit 63 and vice versa), we should probably try and figure out just how big its influence is.</p>
-<p>Looking at the Verilog implementation of the digital circuit, we can see that some inputs depend on <code>outj[i-1]</code> or <code>outj[i+1]</code>. Since the output blocks &ldquo;cascade&rdquo; (output of first block flows onto second, which flows onto the third block etc.), we can determine just how many neighbours a change in bit i affects.</p>
-<p>
-<img src=media/biteffect.png alt="Attempted sketch showing how blocks effect other blocks" loading=lazy>
+With Quartus unable to help me with this, I decided to turn to ModelSim.</p><p>ModelSim is lovely, in that it simulates Verilog modules given a testbench. It also has a bunch of nice graphical features (waveforms mainly), but we&rsquo;ll probably just stick with the console/terminal outputs for this.<br>Now we just need to write a testbench that will solve the problem for us. In this case, we need to determine what 64 bit input will give us the output of 64 bits of 1&rsquo;s.</p><h4 id=idea-2-bruteforce-all-64-bits>Idea 2: Bruteforce all 64 bits</h4><p>Although <em>technically</em> possible, ModelSim is unfortunately way too slow to bruteforce 64 bits. By the time it finds the solution, we&rsquo;ll all probably be ruled over by giant kittens that shoot lasers out of their eyes, so that&rsquo;s a no go.</p><h4 id=idea-3-knowing-that-the-flag-is-ascii-bruteforce-56-bits-since-we-know-that-every-8th-bit-is-a-0>Idea 3: Knowing that the flag is ASCII, bruteforce 56 bits, since we know that every 8th bit is a 0</h4><p>This certainly reduces the amount of time needed to bruteforce, however, whilst we probably won&rsquo;t be ruled by laser shooting kittens by the time it finishes, it will probably take longer than the average lifespan of a human. I don&rsquo;t know about you, but I&rsquo;d like to be alive before it finishes.</p><h4 id=idea-4-bruteforce-n-bits-at-a-time-where-n-is-a-reasonable-number-of-bits-that-can-be-bruteforced>Idea 4: Bruteforce n bits at a time, where n is a reasonable number of bits that can be bruteforced</h4><p>Now this is more like it. Now we just need to find the sweet spot of a reasonable number. Since each bit of the input affects the output of its neighbouring bits (i.e. changing bit 5 affects the output of bit 6), and it&rsquo;s also &ldquo;cyclic&rdquo; (i.e. bit 0 affects the output of bit 63 and vice versa), we should probably try and figure out just how big its influence is.</p><p>Looking at the Verilog implementation of the digital circuit, we can see that some inputs depend on <code>outj[i-1]</code> or <code>outj[i+1]</code>. Since the output blocks &ldquo;cascade&rdquo; (output of first block flows onto second, which flows onto the third block etc.), we can determine just how many neighbours a change in bit i affects.</p><p><img src=media/biteffect.png alt="Attempted sketch showing how blocks effect other blocks" loading=lazy>
 The above shows roughly how a change in a bit affects the neighbours. Blocks 2, 3 and 6 rely on the output of a block on the previous row - e.g. Row 5 block 2 relies on the output of Row 4 block 1. On the other hand, blocks 4 and 5 rely on the output of a block on the next row - e.g. Row 5 block 4 relies on the output of Row 6 block 3. Note how block j on row i only relies on block j-1 (and never block j+1).
 <img src=media/bitouteffect.png alt="Sketch demonstrating the consequences of selfish little blocks" loading=lazy>
-What all this essentially means is that if we&rsquo;re working from index 0 to index 63, if the output bits from 0 to m are all 1&rsquo;s, then bits 0 to m-3 are all correct.<br>
-If we&rsquo;re working from index 63 to index 0, and the output bits are all 1&rsquo;s from 63 to n, then that means all bits from 63 until n+2 are correct.</p>
-<p>So the plan? Bruteforce 8 bits from left to right, and 8 bits from right to left, with some extra bits as a buffer (based on the above revelations). This means we&rsquo;ll be bruteforcing a maximum of 21 (8+8+3+2) bits at a time. ModelSim only takes a few seconds to do bruteforce 21 bits, so we&rsquo;re good to go.</p>
-<h3 id=writing-the-testbench>Writing the testbench</h3>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Verilog data-lang=Verilog><span style=color:#66d9ef>`timescale</span> <span style=color:#ae81ff>1</span>ns<span style=color:#f92672>/</span><span style=color:#ae81ff>1</span>ps
-
-<span style=color:#66d9ef>module</span> test;
-  <span style=color:#66d9ef>reg</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>] in;
-  <span style=color:#66d9ef>wire</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>] out;
-  parking test(in,out);
-  <span style=color:#66d9ef>reg</span> [<span style=color:#ae81ff>21</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>] i,j,k;
-  <span style=color:#66d9ef>reg</span> [<span style=color:#ae81ff>7</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>] verify;
-  <span style=color:#66d9ef>reg</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>] flag<span style=color:#f92672>=</span><span style=color:#ae81ff>64</span><span style=color:#ae81ff>&#39;b0</span>;
-  <span style=color:#66d9ef>initial</span> <span style=color:#66d9ef>begin</span>
-    <span style=color:#66d9ef>for</span> (j<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>;j<span style=color:#f92672>&lt;</span><span style=color:#ae81ff>3</span>;j<span style=color:#f92672>=</span>j<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>begin</span>
-      <span style=color:#75715e>// brute force first and last few bits
-</span><span style=color:#75715e></span>      <span style=color:#66d9ef>for</span> (i<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>;i<span style=color:#f92672>&lt;</span><span style=color:#ae81ff>2</span><span style=color:#f92672>**</span><span style=color:#ae81ff>21</span>;i<span style=color:#f92672>=</span>i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>begin</span>
-        in <span style=color:#f92672>=</span> flag;
-        in[<span style=color:#ae81ff>63</span><span style=color:#f92672>-</span>(j<span style=color:#f92672>*</span><span style=color:#ae81ff>8</span>) <span style=color:#f92672>-:</span><span style=color:#ae81ff>10</span>] <span style=color:#f92672>=</span> i[<span style=color:#ae81ff>20</span><span style=color:#f92672>:</span><span style=color:#ae81ff>11</span>];
-        in[j<span style=color:#f92672>*</span><span style=color:#ae81ff>8</span> <span style=color:#f92672>+:</span> <span style=color:#ae81ff>11</span>] <span style=color:#f92672>=</span> i[<span style=color:#ae81ff>10</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>];
-        #<span style=color:#ae81ff>10</span>;
-        <span style=color:#75715e>// check out bits based on observed patterns
-</span><span style=color:#75715e></span>        <span style=color:#66d9ef>if</span> (out[<span style=color:#ae81ff>63</span><span style=color:#f92672>-</span>(j<span style=color:#f92672>*</span><span style=color:#ae81ff>9</span>) <span style=color:#f92672>-:</span> <span style=color:#ae81ff>7</span>] <span style=color:#f92672>==</span> <span style=color:#ae81ff>7</span><span style=color:#ae81ff>&#39;b111</span>_1111 <span style=color:#f92672>&amp;&amp;</span> out[j<span style=color:#f92672>*</span><span style=color:#ae81ff>8</span> <span style=color:#f92672>+:</span> <span style=color:#ae81ff>6</span>] <span style=color:#f92672>==</span> <span style=color:#ae81ff>6</span><span style=color:#ae81ff>&#39;b111</span>_111) <span style=color:#66d9ef>begin</span>
-          <span style=color:#75715e>// verify that every 8th bit is a 0, because ASCII
-</span><span style=color:#75715e></span>          <span style=color:#66d9ef>for</span> (k<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>;k<span style=color:#f92672>&lt;</span><span style=color:#ae81ff>8</span>;k<span style=color:#f92672>=</span>k<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>)
-            verify[k] <span style=color:#f92672>=</span> <span style=color:#f92672>~</span>(in[(k<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>)<span style=color:#f92672>*</span><span style=color:#ae81ff>8</span><span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>]);
-          <span style=color:#66d9ef>if</span> (<span style=color:#f92672>&amp;</span>verify) flag <span style=color:#f92672>=</span> in;
-        <span style=color:#66d9ef>end</span>
-      <span style=color:#66d9ef>end</span>
-    <span style=color:#66d9ef>end</span>
-    <span style=color:#75715e>// final 16-ish bits
-</span><span style=color:#75715e></span>    <span style=color:#66d9ef>for</span> (i<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>;i<span style=color:#f92672>&lt;</span><span style=color:#ae81ff>2</span><span style=color:#f92672>**</span><span style=color:#ae81ff>16</span>;i<span style=color:#f92672>=</span>i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>begin</span>
-      in <span style=color:#f92672>=</span> flag;
-      in[<span style=color:#ae81ff>39</span><span style=color:#f92672>:</span><span style=color:#ae81ff>24</span>] <span style=color:#f92672>=</span> i[<span style=color:#ae81ff>15</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>];
-      #<span style=color:#ae81ff>10</span>;
-      <span style=color:#66d9ef>if</span> (<span style=color:#f92672>&amp;</span>out) <span style=color:#66d9ef>begin</span>
-        flag <span style=color:#f92672>=</span> in;
-        <span style=color:#75715e>// Victory display
-</span><span style=color:#75715e></span>        $display(<span style=color:#e6db74>&#34;After too many hours, the flag has been obtained!!!</span><span style=color:#ae81ff>\n</span><span style=color:#e6db74>%b&#34;</span>,flag);
-      <span style=color:#66d9ef>end</span>
-    <span style=color:#66d9ef>end</span>
-  <span style=color:#66d9ef>end</span>
-<span style=color:#66d9ef>endmodule</span>
-</code></pre></div><p>We only need to bruteforce 21 bits at a time 3 times, since that will already give us 48 bits of the flag (we take 16 out of the 21 bits each time). The rest can be done with a smaller range. There are delays (<code>#10;</code>) just in case some changes take a little longer to propagate through the circuit.</p>
-<p>
-<img src=media/modelsimoutput.png alt="ModelSim celebrations" loading=lazy>
-At long last, we get what should hopefully be the bits of the flag. Good news is, that it only took 30 seconds! Now to put them in the correct order, and finally, after all these sleepless days, get the flag.</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-py data-lang=py>flag <span style=color:#f92672>=</span> <span style=color:#e6db74>b</span><span style=color:#e6db74>&#34;CTF{&#34;</span>
-<span style=color:#66d9ef>while</span> bits:
-    byte, bits <span style=color:#f92672>=</span> bits[:<span style=color:#ae81ff>8</span>], bits[<span style=color:#ae81ff>8</span>:]
-    flag <span style=color:#f92672>+=</span> bytes([ int(byte[::<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>], <span style=color:#ae81ff>2</span>) ])
-flag <span style=color:#f92672>+=</span> <span style=color:#e6db74>b</span><span style=color:#e6db74>&#34;}&#34;</span>
-
-print(flag)
-</code></pre></div><p>Looking at this specific chunk of the print flag function in game.py gives all the details needed to get the flag from the bits obtained from ModelSim.</p>
-<p>
-<img src=media/flagarrangement.png alt="Sketch of hoe the flag is reassembled" loading=lazy>
-So doing just that (then throwing it around <code>CTF{}</code>), we get our flag!</p>
-<pre tabindex=0><code>Flag: CTF{2TheBr1m}
-</code></pre><p>
-<img src=media/captured.png alt="Flag Captured WOOOOO" loading=lazy>
-A sight I wish I saw during the competition period.</p>
-</article>
-</main>
-</div>
-</body>
-</html>
+What all this essentially means is that if we&rsquo;re working from index 0 to index 63, if the output bits from 0 to m are all 1&rsquo;s, then bits 0 to m-3 are all correct.<br>If we&rsquo;re working from index 63 to index 0, and the output bits are all 1&rsquo;s from 63 to n, then that means all bits from 63 until n+2 are correct.</p><p>So the plan? Bruteforce 8 bits from left to right, and 8 bits from right to left, with some extra bits as a buffer (based on the above revelations). This means we&rsquo;ll be bruteforcing a maximum of 21 (8+8+3+2) bits at a time. ModelSim only takes a few seconds to do bruteforce 21 bits, so we&rsquo;re good to go.</p><h3 id=writing-the-testbench>Writing the testbench</h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Verilog data-lang=Verilog><span style=display:flex><span><span style=color:#66d9ef>`timescale</span> <span style=color:#ae81ff>1</span>ns<span style=color:#f92672>/</span><span style=color:#ae81ff>1</span>ps
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>module</span> test;
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>reg</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>] in;
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>wire</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>] out;
+</span></span><span style=display:flex><span>  parking test(in,out);
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>reg</span> [<span style=color:#ae81ff>21</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>] i,j,k;
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>reg</span> [<span style=color:#ae81ff>7</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>] verify;
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>reg</span> [<span style=color:#ae81ff>63</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>] flag<span style=color:#f92672>=</span><span style=color:#ae81ff>64</span><span style=color:#ae81ff>&#39;b0</span>;
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>initial</span> <span style=color:#66d9ef>begin</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> (j<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>;j<span style=color:#f92672>&lt;</span><span style=color:#ae81ff>3</span>;j<span style=color:#f92672>=</span>j<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>begin</span>
+</span></span><span style=display:flex><span>      <span style=color:#75715e>// brute force first and last few bits
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>      <span style=color:#66d9ef>for</span> (i<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>;i<span style=color:#f92672>&lt;</span><span style=color:#ae81ff>2</span><span style=color:#f92672>**</span><span style=color:#ae81ff>21</span>;i<span style=color:#f92672>=</span>i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>begin</span>
+</span></span><span style=display:flex><span>        in <span style=color:#f92672>=</span> flag;
+</span></span><span style=display:flex><span>        in[<span style=color:#ae81ff>63</span><span style=color:#f92672>-</span>(j<span style=color:#f92672>*</span><span style=color:#ae81ff>8</span>) <span style=color:#f92672>-:</span><span style=color:#ae81ff>10</span>] <span style=color:#f92672>=</span> i[<span style=color:#ae81ff>20</span><span style=color:#f92672>:</span><span style=color:#ae81ff>11</span>];
+</span></span><span style=display:flex><span>        in[j<span style=color:#f92672>*</span><span style=color:#ae81ff>8</span> <span style=color:#f92672>+:</span> <span style=color:#ae81ff>11</span>] <span style=color:#f92672>=</span> i[<span style=color:#ae81ff>10</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>];
+</span></span><span style=display:flex><span>        #<span style=color:#ae81ff>10</span>;
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// check out bits based on observed patterns
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>        <span style=color:#66d9ef>if</span> (out[<span style=color:#ae81ff>63</span><span style=color:#f92672>-</span>(j<span style=color:#f92672>*</span><span style=color:#ae81ff>9</span>) <span style=color:#f92672>-:</span> <span style=color:#ae81ff>7</span>] <span style=color:#f92672>==</span> <span style=color:#ae81ff>7</span><span style=color:#ae81ff>&#39;b111</span>_1111 <span style=color:#f92672>&amp;&amp;</span> out[j<span style=color:#f92672>*</span><span style=color:#ae81ff>8</span> <span style=color:#f92672>+:</span> <span style=color:#ae81ff>6</span>] <span style=color:#f92672>==</span> <span style=color:#ae81ff>6</span><span style=color:#ae81ff>&#39;b111</span>_111) <span style=color:#66d9ef>begin</span>
+</span></span><span style=display:flex><span>          <span style=color:#75715e>// verify that every 8th bit is a 0, because ASCII
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>          <span style=color:#66d9ef>for</span> (k<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>;k<span style=color:#f92672>&lt;</span><span style=color:#ae81ff>8</span>;k<span style=color:#f92672>=</span>k<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>)
+</span></span><span style=display:flex><span>            verify[k] <span style=color:#f92672>=</span> <span style=color:#f92672>~</span>(in[(k<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>)<span style=color:#f92672>*</span><span style=color:#ae81ff>8</span><span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>]);
+</span></span><span style=display:flex><span>          <span style=color:#66d9ef>if</span> (<span style=color:#f92672>&amp;</span>verify) flag <span style=color:#f92672>=</span> in;
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>      <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// final 16-ish bits
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>for</span> (i<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>;i<span style=color:#f92672>&lt;</span><span style=color:#ae81ff>2</span><span style=color:#f92672>**</span><span style=color:#ae81ff>16</span>;i<span style=color:#f92672>=</span>i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>begin</span>
+</span></span><span style=display:flex><span>      in <span style=color:#f92672>=</span> flag;
+</span></span><span style=display:flex><span>      in[<span style=color:#ae81ff>39</span><span style=color:#f92672>:</span><span style=color:#ae81ff>24</span>] <span style=color:#f92672>=</span> i[<span style=color:#ae81ff>15</span><span style=color:#f92672>:</span><span style=color:#ae81ff>0</span>];
+</span></span><span style=display:flex><span>      #<span style=color:#ae81ff>10</span>;
+</span></span><span style=display:flex><span>      <span style=color:#66d9ef>if</span> (<span style=color:#f92672>&amp;</span>out) <span style=color:#66d9ef>begin</span>
+</span></span><span style=display:flex><span>        flag <span style=color:#f92672>=</span> in;
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// Victory display
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>        $display(<span style=color:#e6db74>&#34;After too many hours, the flag has been obtained!!!</span><span style=color:#ae81ff>\n</span><span style=color:#e6db74>%b&#34;</span>,flag);
+</span></span><span style=display:flex><span>      <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>endmodule</span>
+</span></span></code></pre></div><p>We only need to bruteforce 21 bits at a time 3 times, since that will already give us 48 bits of the flag (we take 16 out of the 21 bits each time). The rest can be done with a smaller range. There are delays (<code>#10;</code>) just in case some changes take a little longer to propagate through the circuit.</p><p><img src=media/modelsimoutput.png alt="ModelSim celebrations" loading=lazy>
+At long last, we get what should hopefully be the bits of the flag. Good news is, that it only took 30 seconds! Now to put them in the correct order, and finally, after all these sleepless days, get the flag.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-py data-lang=py><span style=display:flex><span>flag <span style=color:#f92672>=</span> <span style=color:#e6db74>b</span><span style=color:#e6db74>&#34;CTF{&#34;</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>while</span> bits:
+</span></span><span style=display:flex><span>    byte, bits <span style=color:#f92672>=</span> bits[:<span style=color:#ae81ff>8</span>], bits[<span style=color:#ae81ff>8</span>:]
+</span></span><span style=display:flex><span>    flag <span style=color:#f92672>+=</span> bytes([ int(byte[::<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>], <span style=color:#ae81ff>2</span>) ])
+</span></span><span style=display:flex><span>flag <span style=color:#f92672>+=</span> <span style=color:#e6db74>b</span><span style=color:#e6db74>&#34;}&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>print(flag)
+</span></span></code></pre></div><p>Looking at this specific chunk of the print flag function in game.py gives all the details needed to get the flag from the bits obtained from ModelSim.</p><p><img src=media/flagarrangement.png alt="Sketch of hoe the flag is reassembled" loading=lazy>
+So doing just that (then throwing it around <code>CTF{}</code>), we get our flag!</p><pre tabindex=0><code>Flag: CTF{2TheBr1m}
+</code></pre><p><img src=media/captured.png alt="Flag Captured WOOOOO" loading=lazy>
+A sight I wish I saw during the competition period.</p></article></main></div></body></html>

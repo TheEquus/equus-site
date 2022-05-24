@@ -1,0 +1,1 @@
+window.onload=function(){var e=document.getElementById("backtotop");e.onclick=function(){window.scroll({top:0})}},window.onscroll=function(){detectScroll=window.scrollY;var e=document.getElementById("backtotop");detectScroll>500?(e.style.visibility="visible",e.style.opacity=1):(e.style.visibility="hidden",e.style.opacity=0)}

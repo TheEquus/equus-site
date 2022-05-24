@@ -1,112 +1,14 @@
-<!doctype html><html lang=en data-mode=dark>
-<head>
-<meta charset=utf-8>
-<meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no">
-<meta name=description content="Read about bits being analysed and Motorola being remembered, this is a writeup on a serial challenge titled &#34;A different Type of Serial Key&#34; from CSAW CTF 2021">
-<meta property="og:title" content="&#34;Oh yeah Motorola exists&#34; - Revelations made in CSAW CTF 2021">
-<meta property="og:description" content="Read about bits being analysed and Motorola being remembered, this is a writeup on a serial challenge titled &#34;A different Type of Serial Key&#34; from CSAW CTF 2021">
-<meta property="og:image" content="https:/anniequus.com/posts/csaw2021-serial/media/cover.jpg">
-<meta property="og:url" content="https://anniequus.com/posts/csaw2021-serial/">
-<meta name=twitter:card content="summary_large_image">
-<title>"Oh yeah Motorola exists" - Revelations made in CSAW CTF 2021</title>
-<link rel=canonical href=https://anniequus.com/posts/csaw2021-serial/>
-<link rel=preload href=https://anniequus.com/fonts/AnonymousPro-Regular.ttf as=font crossorigin=anonymous>
-<link rel=preload href=https://anniequus.com/fonts/Heebo-VariableFont_wght.ttf as=font crossorigin=anonymous>
-<link rel=preload href=https://anniequus.com/fonts/Rubik-VariableFont_wght.ttf as=font crossorigin=anonymous>
-<link rel=stylesheet href=https://anniequus.com/css/main.min.eeede07a5a7900394b8a57e5f48e56f7d17c1e2c8f672373eee3fb1ae0234398.css integrity="sha256-7u3gelp5ADlLilfl9I5W99F8HiyPZyNz7uP7GuAjQ5g=" crossorigin=anonymous>
-<script defer src=https://anniequus.com/js/main.min.a96afa085ea5710e329be0978d4a82bfb73b360d4492b02bc2fd1eaf26542e23.js integrity="sha256-qWr6CF6lcQ4ym+CXjUqCv7c7Ng1EkrArwv0eryZULiM=" crossorigin=anonymous></script>
-<script defer data-domain=anniequus.com src=https://plausible.io/js/plausible.js></script>
-</head>
-<body>
-<header id=navbar>
-<h1><a href=https://anniequus.com/>Equus 🐴 (Annie)</a></h1>
-<ul>
-<li><a href=/about/>About</a></li>
-<li><a href=/posts/>Posts</a></li>
-</ul>
-</header>
-<a href=# id=backtotop></a>
-<div class=content>
-<main>
-<article>
-<header>
-<h1>"Oh yeah Motorola exists" - Revelations made in CSAW CTF 2021</h1>
-<section class=terms><a class=btn href=/categories/ctf/>CTF</a></section>
-<p>
-Published on <time datetime=2021-09-21>2021-09-21</time>
-</p>
-</header>
-<details class=toc open>
-<summary class=outline-dashed>
-Table of Contents
-</summary>
-<nav id=TableOfContents>
-<ul>
-<li><a href=#introduction>Introduction</a></li>
-<li><a href=#extraction>Extraction</a>
-<ul>
-<li><a href=#keysal>key.sal</a></li>
-<li><a href=#capturesal>capture.sal</a></li>
-</ul>
-</li>
-<li><a href=#what-in-the-world-are-all-these-ss>What in the world are all these S&rsquo;s</a>
-<ul>
-<li><a href=#research>Research</a></li>
-<li><a href=#apply>Apply</a></li>
-</ul>
-</li>
-<li><a href=#the-programming-y-bits>The programming-y bits</a>
-<ul>
-<li><a href=#loading-up-ghidra>Loading up Ghidra</a></li>
-<li><a href=#trust-the-python>Trust the python</a></li>
-</ul>
-</li>
-</ul>
-</nav>
-</details>
-<img src=media/ChallInfo.png alt="Challenge info" loading=lazy>
-<p>A mildly interesting challenge that touches (very briefly) on serial communication. But given that the files are .sal files, we can use the trusty old Saleae&rsquo;s logic analyser to help decode everything.</p>
-<p>TL;DR: Use Saleae to <a href=#extraction>extract information</a>, <a href=#research>be reminded that Motorola exists</a> and created S-records, <a href=#apply>break the information down</a>, <a href=#loading-up-ghidra>use Ghidra</a> to disassemble and decompile the machine code, and <a href=#trust-the-python>make sense of everything</a> to eventually obtain the flag.</p>
-<h2 id=introduction>Introduction</h2>
-<p>The challenge gives us two .sal files, and based solely on the challenge description, capture.sal gives us a function block, and key.sal gives us a key of some kind. This seems pretty straight forward, so time to get on extracting.</p>
-<h2 id=extraction>Extraction</h2>
-<h3 id=keysal>key.sal</h3>
-<p>First, we&rsquo;ll take a look at key.sal, and see what we can get.<br>
-<img src=media/KeyObserve.png alt="Lots of squiggly lines from saleae" loading=lazy>
-<br>
-There are only two channels to look at, and given that one channel (channel 0 in white) seems to have pretty consistent rises and falls, it&rsquo;s safe to say that this is the clock. Leaving channel 1 (the orange channel) to be the data channel we need to collect. Thankfully, figuring out which protocol could be used isn&rsquo;t too difficult given this information, and just a casual click through all the possible analysers Saleae provides, leads us to I2C being the best candidate for this capture.
-<img src=media/KeySettings.png alt="Setting for I2C extraction" loading=lazy>
-<br>
-Here we have assigned our clock (SCL) to channel 0, and data (SDA) to channel 1.<br>
-<img src=media/KeyAnalyse.png alt="More squiggly lines, but with careful analysis" loading=lazy>
+<!doctype html><html lang=en data-mode=dark><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no"><meta name=description content="Read about bits being analysed and Motorola being remembered, this is a writeup on a serial challenge titled &#34;A different Type of Serial Key&#34; from CSAW CTF 2021"><meta property="og:title" content="&#34;Oh yeah Motorola exists&#34; - Revelations made in CSAW CTF 2021"><meta property="og:description" content="Read about bits being analysed and Motorola being remembered, this is a writeup on a serial challenge titled &#34;A different Type of Serial Key&#34; from CSAW CTF 2021"><meta property="og:image" content="https:/anniequus.com/posts/csaw2021-serial/media/cover.jpg"><meta property="og:url" content="https://anniequus.com/posts/csaw2021-serial/"><meta name=twitter:card content="summary_large_image"><title>"Oh yeah Motorola exists" - Revelations made in CSAW CTF 2021</title><link rel=canonical href=https://anniequus.com/posts/csaw2021-serial/><link rel=preload href=https://anniequus.com/fonts/AnonymousPro-Regular.ttf as=font crossorigin=anonymous><link rel=preload href=https://anniequus.com/fonts/Heebo-VariableFont_wght.ttf as=font crossorigin=anonymous><link rel=preload href=https://anniequus.com/fonts/Rubik-VariableFont_wght.ttf as=font crossorigin=anonymous><link rel=stylesheet href=https://anniequus.com/css/main.min.eeede07a5a7900394b8a57e5f48e56f7d17c1e2c8f672373eee3fb1ae0234398.css integrity="sha256-7u3gelp5ADlLilfl9I5W99F8HiyPZyNz7uP7GuAjQ5g=" crossorigin=anonymous><script defer src=https://anniequus.com/js/main.min.cf29f7226a9c2b2d20303d20e6fdd133796cbbd092dfd7486f2e01b089ffe03d.js integrity="sha256-zyn3ImqcKy0gMD0g5v3RM3lsu9CS39dIby4BsIn/4D0=" crossorigin=anonymous></script>
+<script defer data-domain=anniequus.com src=https://plausible.io/js/plausible.js></script></head><body><header id=navbar><h1><a href=https://anniequus.com/>Equus 🐴 (Annie)</a></h1><ul><li><a href=/about/>About</a></li><li><a href=/posts/>Posts</a></li></ul></header><a href=# id=backtotop></a><div class=content><main><article><header><h1>"Oh yeah Motorola exists" - Revelations made in CSAW CTF 2021</h1><section class=terms><a class=btn href=/categories/ctf/>CTF</a></section><p>Published on <time datetime=2021-09-21>2021-09-21</time></p></header><details class=toc open><summary class=outline-dashed>Table of Contents</summary><nav id=TableOfContents><ul><li><a href=#introduction>Introduction</a></li><li><a href=#extraction>Extraction</a><ul><li><a href=#keysal>key.sal</a></li><li><a href=#capturesal>capture.sal</a></li></ul></li><li><a href=#what-in-the-world-are-all-these-ss>What in the world are all these S&rsquo;s</a><ul><li><a href=#research>Research</a></li><li><a href=#apply>Apply</a></li></ul></li><li><a href=#the-programming-y-bits>The programming-y bits</a><ul><li><a href=#loading-up-ghidra>Loading up Ghidra</a></li><li><a href=#trust-the-python>Trust the python</a></li></ul></li></ul></nav></details><img src=media/ChallInfo.png alt="Challenge info" loading=lazy><p>A mildly interesting challenge that touches (very briefly) on serial communication. But given that the files are .sal files, we can use the trusty old Saleae&rsquo;s logic analyser to help decode everything.</p><p>TL;DR: Use Saleae to <a href=#extraction>extract information</a>, <a href=#research>be reminded that Motorola exists</a> and created S-records, <a href=#apply>break the information down</a>, <a href=#loading-up-ghidra>use Ghidra</a> to disassemble and decompile the machine code, and <a href=#trust-the-python>make sense of everything</a> to eventually obtain the flag.</p><h2 id=introduction>Introduction</h2><p>The challenge gives us two .sal files, and based solely on the challenge description, capture.sal gives us a function block, and key.sal gives us a key of some kind. This seems pretty straight forward, so time to get on extracting.</p><h2 id=extraction>Extraction</h2><h3 id=keysal>key.sal</h3><p>First, we&rsquo;ll take a look at key.sal, and see what we can get.<br><img src=media/KeyObserve.png alt="Lots of squiggly lines from saleae" loading=lazy><br>There are only two channels to look at, and given that one channel (channel 0 in white) seems to have pretty consistent rises and falls, it&rsquo;s safe to say that this is the clock. Leaving channel 1 (the orange channel) to be the data channel we need to collect. Thankfully, figuring out which protocol could be used isn&rsquo;t too difficult given this information, and just a casual click through all the possible analysers Saleae provides, leads us to I2C being the best candidate for this capture.
+<img src=media/KeySettings.png alt="Setting for I2C extraction" loading=lazy><br>Here we have assigned our clock (SCL) to channel 0, and data (SDA) to channel 1.<br><img src=media/KeyAnalyse.png alt="More squiggly lines, but with careful analysis" loading=lazy>
 Applying those settings gives us the the above.
-<img src=media/I2CTI.png alt="Texas Instruments documentation about I2C" loading=lazy>
-<br>
-Even though it&rsquo;s not strictly necessary to know much/anything about I2C, here&rsquo;s a great diagram from <a href=https://www.ti.com/lit/an/slva704/slva704.pdf target=_blank rel=noreferrer>Texas Instruments</a>
-that matches what we see in the capture. We can see that SCL is broken into groups of 9 periods (rise and fall of the clock), which matches to I2C&rsquo;s 8 bits of data, plus an acknowledge bit (each period of the clock transmits one bit).<br>
-Looking at the output terminal of the analyser, we get the following information:<br>
-<code>read to 0x08 ack data: 0x59 0x57 0x72 0x31 0x79 0xCE 0x94 0x8D 0x15 0xD4 0x54 0x02 0x7C 0x5C 0xA0 0x83 0x3D 0xAC 0xB7 0x2A 0x17 0x67 0x76 0x38 0x98 0x8F 0x69 0xE8 0xD0</code><br>
-Since there isn&rsquo;t anything that can be done to these hex strings, it&rsquo;s probably safe to assume that&rsquo;s all for now regarding key.sal - onwards to capture.sal!</p>
-<h3 id=capturesal>capture.sal</h3>
-<p>
-<img src=media/CaptureOverview.png alt="Extremely zoomed out squiggly lines from saleae" loading=lazy>
-<br>
-Giving the capture a look, there are clearly two blocks of information being sent. Since this capture uses the same number of channels, and each channel has the same behaviour across the two blocks, it&rsquo;s safe to assume the same protocol is being used within this capture. Given that there are more than 2 channels, we can rule out I2C. We just need a closer look at what&rsquo;s going on in each channel.<br>
-<img src=media/CaptureProtocol.png alt="Zoomed in version of the zoomed out squiggly lines" loading=lazy>
-Upon closer inspection, we can see a good amount of squiggly lines. Just from the image alone, we can see that channel 0 is probably a clock, channel 1 is some enable line (active low), channel 3 is data, and channel 2 is dead to us. Now some amount of scrolling through Saleae&rsquo;s logic analyser will lead us to SPI.<br>
-<img src=media/CaptureSettings.png alt="SPI settings" loading=lazy>
-<br>
-Based on the information we do have, we can plug them into the settings for SPI. Again, knowing SPI in detail is not necessary, but a <a href="https://www.youtube.com/watch?v=MCi7dCBhVpQ" target=_blank rel=noreferrer>here's a great video</a>
-on the basics of SPI.<br>
-<img src=media/CaptureHex.png alt="Hex output of squiggly lines" loading=lazy>
-<br>
-Taking a look at the analyser&rsquo;s output table, we can see that the data (miso in my case) seems quite ASCII like. There are many useless facts stored in my brain, and knowing that 0x30-0x39 represents numbers 0-9 is one of them. So converting all the hex to ASCII output, gives us the following:</p>
-<p>Block 1:</p>
-<pre tabindex=0><code>S00C00004C6F63616C204B6579BF
+<img src=media/I2CTI.png alt="Texas Instruments documentation about I2C" loading=lazy><br>Even though it&rsquo;s not strictly necessary to know much/anything about I2C, here&rsquo;s a great diagram from <a href=https://www.ti.com/lit/an/slva704/slva704.pdf target=_blank rel=noreferrer>Texas Instruments</a>
+that matches what we see in the capture. We can see that SCL is broken into groups of 9 periods (rise and fall of the clock), which matches to I2C&rsquo;s 8 bits of data, plus an acknowledge bit (each period of the clock transmits one bit).<br>Looking at the output terminal of the analyser, we get the following information:<br><code>read to 0x08 ack data: 0x59 0x57 0x72 0x31 0x79 0xCE 0x94 0x8D 0x15 0xD4 0x54 0x02 0x7C 0x5C 0xA0 0x83 0x3D 0xAC 0xB7 0x2A 0x17 0x67 0x76 0x38 0x98 0x8F 0x69 0xE8 0xD0</code><br>Since there isn&rsquo;t anything that can be done to these hex strings, it&rsquo;s probably safe to assume that&rsquo;s all for now regarding key.sal - onwards to capture.sal!</p><h3 id=capturesal>capture.sal</h3><p><img src=media/CaptureOverview.png alt="Extremely zoomed out squiggly lines from saleae" loading=lazy><br>Giving the capture a look, there are clearly two blocks of information being sent. Since this capture uses the same number of channels, and each channel has the same behaviour across the two blocks, it&rsquo;s safe to assume the same protocol is being used within this capture. Given that there are more than 2 channels, we can rule out I2C. We just need a closer look at what&rsquo;s going on in each channel.<br><img src=media/CaptureProtocol.png alt="Zoomed in version of the zoomed out squiggly lines" loading=lazy>
+Upon closer inspection, we can see a good amount of squiggly lines. Just from the image alone, we can see that channel 0 is probably a clock, channel 1 is some enable line (active low), channel 3 is data, and channel 2 is dead to us. Now some amount of scrolling through Saleae&rsquo;s logic analyser will lead us to SPI.<br><img src=media/CaptureSettings.png alt="SPI settings" loading=lazy><br>Based on the information we do have, we can plug them into the settings for SPI. Again, knowing SPI in detail is not necessary, but a <a href="https://www.youtube.com/watch?v=MCi7dCBhVpQ" target=_blank rel=noreferrer>here's a great video</a>
+on the basics of SPI.<br><img src=media/CaptureHex.png alt="Hex output of squiggly lines" loading=lazy><br>Taking a look at the analyser&rsquo;s output table, we can see that the data (miso in my case) seems quite ASCII like. There are many useless facts stored in my brain, and knowing that 0x30-0x39 represents numbers 0-9 is one of them. So converting all the hex to ASCII output, gives us the following:</p><p>Block 1:</p><pre tabindex=0><code>S00C00004C6F63616C204B6579BF
 S221020018423B165105BDAAFF27DB3B5D223497EA549FDC4D27330808F7F95D95B0EC
 S5030001FB
-</code></pre><p>Block 2:</p>
-<pre tabindex=0><code>S0210000506F77657250432042696720456E6469616E2033322D42697420537475620E
+</code></pre><p>Block 2:</p><pre tabindex=0><code>S0210000506F77657250432042696720456E6469616E2033322D42697420537475620E
 S12304EC9421FFD093E1002C7C3F0B78907F000C909F000839200000913F001C4800012C7E
 S123050C813F001C552907FE2F890000409E0058813F001C815F000C7D2A4A1489290000FF
 S123052C7D2A07743D20100281090018813F001C7D284A14892900003929FFFD5529063EC7
@@ -120,244 +22,46 @@ S123060C89490000813F001C80FF00087D274A147D0A5278554A063E99490000813F001CA1
 S123062C39290001913F001C813F001C2F89001C409DFED0813F00083929001D3940000040
 S11B064C9949000060000000397F003083EBFFFC7D615B784E80002060
 S503000CF0
-</code></pre><h2 id=what-in-the-world-are-all-these-ss>What in the world are all these S&rsquo;s</h2>
-<p>This looks very similar to <a href=https://en.wikipedia.org/wiki/Intel_HEX target=_blank rel=noreferrer>Intel's hex format</a>
-(.hex files), which essentially allows for machine code to be written into a chip&rsquo;s ROM. However, instead of semicolons, there are S&rsquo;s in this case, which is very much not Intel hex-like. This calls for a round of intense searching.</p>
-<h3 id=research>Research</h3>
-<p>Whip out the keyboard, it&rsquo;s time to search the internet for what these two blocks really are. Searching up <code>s instead of semicolon hex file</code> gives a couple sites mentioning &ldquo;S-records&rdquo;, which is very promising. However, if you&rsquo;re feeling efficient, <code>S hex files</code> will present the wikipedia page for S-records (originally created by Motorola!). Taking a look at <a href=https://en.wikipedia.org/wiki/SREC_(file_format)>SREC</a> confirms that we&rsquo;ve hit the jackpot. After spending quite a bit of time reminiscing about some <a href=https://en.wikipedia.org/wiki/Motorola_Razr target=_blank rel=noreferrer>great old Motorola phones</a>
-, we can wipe off that sweat from the heavy round of researching, because now we&rsquo;ll apply our new found knowledge to the two blocks.</p>
-<h3 id=apply>Apply</h3>
-<p>
-<img src=media/SRECStruct.png alt="Wikipedia extract about S Records structure" loading=lazy>
-Based on the record structure shown, we can break each block into the appropriate records, and work from there:</p>
-<p>Block 1: </p>
-<section> <table>
-<thead>
-<tr>
-<th style=text-align:center>S</th>
-<th style=text-align:center>Type</th>
-<th style=text-align:center>Byte Count</th>
-<th style=text-align:center>Address</th>
-<th style=text-align:center>Data</th>
-<th style=text-align:center>Checksum</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style=text-align:center>S</td>
-<td style=text-align:center>0</td>
-<td style=text-align:center>0C</td>
-<td style=text-align:center>0000</td>
-<td style=text-align:center>4C6F63616C204B6579</td>
-<td style=text-align:center>BF</td>
-</tr>
-<tr>
-<td style=text-align:center>S</td>
-<td style=text-align:center>2</td>
-<td style=text-align:center>21</td>
-<td style=text-align:center>020018</td>
-<td style=text-align:center>423B165105BDAAFF27DB3B5D223497EA549FDC4D27330808F7F95D95B0</td>
-<td style=text-align:center>EC</td>
-</tr>
-<tr>
-<td style=text-align:center>S</td>
-<td style=text-align:center>5</td>
-<td style=text-align:center>03</td>
-<td style=text-align:center>&mdash;</td>
-<td style=text-align:center>0001</td>
-<td style=text-align:center>FB</td>
-</tr>
-</tbody>
-</table> </section>
-<p>Block 2: </p>
-<section> <table>
-<thead>
-<tr>
-<th style=text-align:center>S</th>
-<th style=text-align:center>Type</th>
-<th style=text-align:center>Byte Count</th>
-<th style=text-align:center>Address</th>
-<th style=text-align:center>Data</th>
-<th style=text-align:center>Checksum</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style=text-align:center>S</td>
-<td style=text-align:center>0</td>
-<td style=text-align:center>21</td>
-<td style=text-align:center>0000</td>
-<td style=text-align:center>506F77657250432042696720456E6469616E2033322D4269742053747562</td>
-<td style=text-align:center>0E</td>
-</tr>
-<tr>
-<td style=text-align:center>S</td>
-<td style=text-align:center>1</td>
-<td style=text-align:center>23</td>
-<td style=text-align:center>04EC</td>
-<td style=text-align:center>9421FFD093E1002C7C3F0B78907F000C909F000839200000913F001C4800012C</td>
-<td style=text-align:center>7E</td>
-</tr>
-<tr>
-<td style=text-align:center>S</td>
-<td style=text-align:center>1</td>
-<td style=text-align:center>23</td>
-<td style=text-align:center>050C</td>
-<td style=text-align:center>813F001C552907FE2F890000409E0058813F001C815F000C7D2A4A1489290000</td>
-<td style=text-align:center>FF</td>
-</tr>
-<tr>
-<td style=text-align:center>S</td>
-<td style=text-align:center>1</td>
-<td style=text-align:center>23</td>
-<td style=text-align:center>052C</td>
-<td style=text-align:center>7D2A07743D20100281090018813F001C7D284A14892900003929FFFD5529063E</td>
-<td style=text-align:center>C7</td>
-</tr>
-<tr>
-<td style=text-align:center>S</td>
-<td style=text-align:center>1</td>
-<td style=text-align:center>23</td>
-<td style=text-align:center>054C</td>
-<td style=text-align:center>7D2907747D494A787D280774813F001C815F00087D2A4A14550A063E99490000</td>
-<td style=text-align:center>74</td>
-</tr>
-<tr>
-<td style=text-align:center>S</td>
-<td style=text-align:center>1</td>
-<td style=text-align:center>23</td>
-<td style=text-align:center>056C</td>
-<td style=text-align:center>480000BC815F001C3D205555612955567D0A48967D49FE707D2940501D290003</td>
-<td style=text-align:center>17</td>
-</tr>
-<tr>
-<td style=text-align:center>S</td>
-<td style=text-align:center>1</td>
-<td style=text-align:center>23</td>
-<td style=text-align:center>058C</td>
-<td style=text-align:center>7D2950502F890000409E0058813F001C815F000C7D2A4A14892900007D2A0774</td>
-<td style=text-align:center>76</td>
-</tr>
-<tr>
-<td style=text-align:center>S</td>
-<td style=text-align:center>1</td>
-<td style=text-align:center>23</td>
-<td style=text-align:center>05AC</td>
-<td style=text-align:center>3D20100281090018813F001C7D284A1489290000392900055529063E7D290774</td>
-<td style=text-align:center>3F</td>
-</tr>
-<tr>
-<td style=text-align:center>S</td>
-<td style=text-align:center>1</td>
-<td style=text-align:center>23</td>
-<td style=text-align:center>05CC</td>
-<td style=text-align:center>7D494A787D280774813F001C815F00087D2A4A14550A063E9949000048000040</td>
-<td style=text-align:center>8D</td>
-</tr>
-<tr>
-<td style=text-align:center>S</td>
-<td style=text-align:center>1</td>
-<td style=text-align:center>23</td>
-<td style=text-align:center>05EC</td>
-<td style=text-align:center>813F001C815F000C7D2A4A14890900003D20100281490018813F001C7D2A4A14</td>
-<td style=text-align:center>5A</td>
-</tr>
-<tr>
-<td style=text-align:center>S</td>
-<td style=text-align:center>1</td>
-<td style=text-align:center>23</td>
-<td style=text-align:center>060C</td>
-<td style=text-align:center>89490000813F001C80FF00087D274A147D0A5278554A063E99490000813F001C</td>
-<td style=text-align:center>A1</td>
-</tr>
-<tr>
-<td style=text-align:center>S</td>
-<td style=text-align:center>1</td>
-<td style=text-align:center>23</td>
-<td style=text-align:center>062C</td>
-<td style=text-align:center>39290001913F001C813F001C2F89001C409DFED0813F00083929001D39400000</td>
-<td style=text-align:center>40</td>
-</tr>
-<tr>
-<td style=text-align:center>S</td>
-<td style=text-align:center>1</td>
-<td style=text-align:center>1B</td>
-<td style=text-align:center>064C</td>
-<td style=text-align:center>9949000060000000397F003083EBFFFC7D615B784E800020</td>
-<td style=text-align:center>60</td>
-</tr>
-<tr>
-<td style=text-align:center>S</td>
-<td style=text-align:center>5</td>
-<td style=text-align:center>03</td>
-<td style=text-align:center>&mdash;</td>
-<td style=text-align:center>000C</td>
-<td style=text-align:center>F0</td>
-</tr>
-</tbody>
-</table> </section>
-<p>Now to analyse what each record means. Thankfully it&rsquo;s quite simple:</p>
-<ul>
-<li><code>S5</code> we can just ignore, since it only tells us how many S1/2/3 records there are (basically number of data records).</li>
-<li>As mentioned above, <code>S1</code> and <code>S2</code> are data records, the only difference is that S2&rsquo;s address size is 6 bytes.</li>
-<li><code>S0</code> is very helpful, as they&rsquo;re header records. It tells us information about each block. Given that each S0 record&rsquo;s data field looks very ASCII like, let&rsquo;s decode:
-<ul>
-<li>Block 1: <code>Local Key</code></li>
-<li>Block 2: <code>PowerPC Big Endian 32-Bit Stub</code></li>
-</ul>
-</li>
-</ul>
-<p>Very intriguing. There seems to be another key (that&rsquo;s separate to the key we got from key.sal), so we&rsquo;ll set that aside and take a look at block 2. It looks like there&rsquo;ll be at least a little PowerPC fun! Good thing I know a creature that knows PowerPC.</p>
-<h2 id=the-programming-y-bits>The programming-y bits</h2>
-<h3 id=loading-up-ghidra>Loading up Ghidra</h3>
-<p>Now, reversing the hex codes to the appropriate machine code instructions by hand would be, to put it simply, complete insanity. Luckily Ghidra can help with not just the disassembly, but also the decompilation. This allows us to deal with PowerPC with little to no PowerPC knowledge.<br>
-Given that I know basically nothing about PowerPC, the decompiler thankfully gives plenty of information as to what&rsquo;s going on (I&rsquo;ve changed some variable names):</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-C data-lang=C><span style=color:#66d9ef>void</span> <span style=color:#a6e22e>UndefinedFunction_00000000</span>(<span style=color:#66d9ef>int</span> param_1,<span style=color:#66d9ef>int</span> param_2)
-
-{
-  uint index;
-
-  <span style=color:#66d9ef>for</span> (index <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>; (<span style=color:#66d9ef>int</span>)index <span style=color:#f92672>&lt;</span> <span style=color:#ae81ff>0x1d</span>; index <span style=color:#f92672>=</span> index <span style=color:#f92672>+</span> <span style=color:#ae81ff>1</span>) {
-    <span style=color:#66d9ef>if</span> ((index <span style=color:#f92672>&amp;</span> <span style=color:#ae81ff>1</span>) <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span>) {
-      <span style=color:#f92672>*</span>(byte <span style=color:#f92672>*</span>)(param_2 <span style=color:#f92672>+</span> index) <span style=color:#f92672>=</span>
-           <span style=color:#f92672>*</span>(byte <span style=color:#f92672>*</span>)(param_1 <span style=color:#f92672>+</span> index) <span style=color:#f92672>^</span> <span style=color:#f92672>*</span>(<span style=color:#66d9ef>char</span> <span style=color:#f92672>*</span>)(local_key <span style=color:#f92672>+</span> index) <span style=color:#f92672>-</span> <span style=color:#ae81ff>3U</span>;
-    }
-    <span style=color:#66d9ef>else</span> {
-      <span style=color:#66d9ef>if</span> ((<span style=color:#66d9ef>int</span>)index <span style=color:#f92672>%</span> <span style=color:#ae81ff>3</span> <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span>) {
-        <span style=color:#f92672>*</span>(byte <span style=color:#f92672>*</span>)(param_2 <span style=color:#f92672>+</span> index) <span style=color:#f92672>=</span>
-             <span style=color:#f92672>*</span>(byte <span style=color:#f92672>*</span>)(param_1 <span style=color:#f92672>+</span> index) <span style=color:#f92672>^</span> <span style=color:#f92672>*</span>(<span style=color:#66d9ef>char</span> <span style=color:#f92672>*</span>)(local_key <span style=color:#f92672>+</span> index) <span style=color:#f92672>+</span> <span style=color:#ae81ff>5U</span>;
-      }
-      <span style=color:#66d9ef>else</span> {
-        <span style=color:#f92672>*</span>(byte <span style=color:#f92672>*</span>)(param_2 <span style=color:#f92672>+</span> index) <span style=color:#f92672>=</span>
-             <span style=color:#f92672>*</span>(byte <span style=color:#f92672>*</span>)(param_1 <span style=color:#f92672>+</span> index) <span style=color:#f92672>^</span> <span style=color:#f92672>*</span>(byte <span style=color:#f92672>*</span>)(local_key <span style=color:#f92672>+</span> index);
-      }
-    }
-  }
-  <span style=color:#f92672>*</span>(undefined <span style=color:#f92672>*</span>)(param_2 <span style=color:#f92672>+</span> <span style=color:#ae81ff>0x1d</span>) <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>;
-  <span style=color:#66d9ef>return</span>;
-}
-</code></pre></div><p>Taking a look at this, it seems to XOR (^) each byte of param_1 against the local key (with some small adding/subtracting depending on the index) and stores it in param_2. Clearly, param_1 is where the key from key.sal comes in and param_2 should hopefully be the flag.</p>
-<h3 id=trust-the-python>Trust the python</h3>
-<p>All that needs to be done is to plug the keys into the C code and hopefully get the flag. But for whatever reason, my brain decided it wanted to work with snakes instead.</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-py data-lang=py>key <span style=color:#f92672>=</span> [<span style=color:#ae81ff>0x59</span>, <span style=color:#ae81ff>0x57</span>, <span style=color:#ae81ff>0x72</span>, <span style=color:#ae81ff>0x31</span>, <span style=color:#ae81ff>0x79</span>, <span style=color:#ae81ff>0xCE</span>, <span style=color:#ae81ff>0x94</span>, <span style=color:#ae81ff>0x8D</span>, <span style=color:#ae81ff>0x15</span>, <span style=color:#ae81ff>0xD4</span>, <span style=color:#ae81ff>0x54</span>, <span style=color:#ae81ff>0x02</span>, <span style=color:#ae81ff>0x7C</span>, <span style=color:#ae81ff>0x5C</span>, <span style=color:#ae81ff>0xA0</span>, <span style=color:#ae81ff>0x83</span>, <span style=color:#ae81ff>0x3D</span>, <span style=color:#ae81ff>0xAC</span>, <span style=color:#ae81ff>0xB7</span>, <span style=color:#ae81ff>0x2A</span>, <span style=color:#ae81ff>0x17</span>, <span style=color:#ae81ff>0x67</span>, <span style=color:#ae81ff>0x76</span>, <span style=color:#ae81ff>0x38</span>, <span style=color:#ae81ff>0x98</span>, <span style=color:#ae81ff>0x8F</span>, <span style=color:#ae81ff>0x69</span>, <span style=color:#ae81ff>0xE8</span>, <span style=color:#ae81ff>0xD0</span>]
-local <span style=color:#f92672>=</span> [<span style=color:#ae81ff>0x42</span>, <span style=color:#ae81ff>0x3B</span>, <span style=color:#ae81ff>0x16</span>, <span style=color:#ae81ff>0x51</span>, <span style=color:#ae81ff>0x05</span>, <span style=color:#ae81ff>0xBD</span>, <span style=color:#ae81ff>0xAA</span>, <span style=color:#ae81ff>0xFF</span>, <span style=color:#ae81ff>0x27</span>, <span style=color:#ae81ff>0xDB</span>, <span style=color:#ae81ff>0x3B</span>, <span style=color:#ae81ff>0x5D</span>, <span style=color:#ae81ff>0x22</span>, <span style=color:#ae81ff>0x34</span>, <span style=color:#ae81ff>0x97</span>, <span style=color:#ae81ff>0xEA</span>, <span style=color:#ae81ff>0x54</span>, <span style=color:#ae81ff>0x9F</span>, <span style=color:#ae81ff>0xDC</span>, <span style=color:#ae81ff>0x4D</span>, <span style=color:#ae81ff>0x27</span>, <span style=color:#ae81ff>0x33</span>, <span style=color:#ae81ff>0x08</span>, <span style=color:#ae81ff>0x08</span>, <span style=color:#ae81ff>0xF7</span>, <span style=color:#ae81ff>0xF9</span>, <span style=color:#ae81ff>0x5D</span>, <span style=color:#ae81ff>0x95</span>, <span style=color:#ae81ff>0xB0</span>]
-
-flag <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;&#34;</span>
-
-<span style=color:#66d9ef>for</span> i <span style=color:#f92672>in</span> range(<span style=color:#ae81ff>29</span>):
-    <span style=color:#66d9ef>if</span> (i <span style=color:#f92672>&amp;</span> <span style=color:#ae81ff>1</span>) <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span>:
-         flag <span style=color:#f92672>+=</span> chr((key[i] <span style=color:#f92672>^</span> local[i]<span style=color:#f92672>-</span><span style=color:#ae81ff>3</span>))
-    <span style=color:#66d9ef>elif</span> (i <span style=color:#f92672>%</span> <span style=color:#ae81ff>3</span>) <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span>:
-         flag <span style=color:#f92672>+=</span> chr((key[i] <span style=color:#f92672>^</span> local[i]<span style=color:#f92672>+</span><span style=color:#ae81ff>5</span>))
-    <span style=color:#66d9ef>else</span>:
-         flag <span style=color:#f92672>+=</span> chr(key[i] <span style=color:#f92672>^</span> local[i])
-
-print(flag)
-</code></pre></div><p>In the end, we finally get the flag we&rsquo;re after!</p>
-<pre tabindex=0><code>Flag: flag{s3r14l_ch4ll3ng3_s0lv3r}
-</code></pre>
-</article>
-</main>
-</div>
-</body>
-</html>
+</code></pre><h2 id=what-in-the-world-are-all-these-ss>What in the world are all these S&rsquo;s</h2><p>This looks very similar to <a href=https://en.wikipedia.org/wiki/Intel_HEX target=_blank rel=noreferrer>Intel's hex format</a>
+(.hex files), which essentially allows for machine code to be written into a chip&rsquo;s ROM. However, instead of semicolons, there are S&rsquo;s in this case, which is very much not Intel hex-like. This calls for a round of intense searching.</p><h3 id=research>Research</h3><p>Whip out the keyboard, it&rsquo;s time to search the internet for what these two blocks really are. Searching up <code>s instead of semicolon hex file</code> gives a couple sites mentioning &ldquo;S-records&rdquo;, which is very promising. However, if you&rsquo;re feeling efficient, <code>S hex files</code> will present the wikipedia page for S-records (originally created by Motorola!). Taking a look at <a href=https://en.wikipedia.org/wiki/SREC_(file_format)>SREC</a> confirms that we&rsquo;ve hit the jackpot. After spending quite a bit of time reminiscing about some <a href=https://en.wikipedia.org/wiki/Motorola_Razr target=_blank rel=noreferrer>great old Motorola phones</a>
+, we can wipe off that sweat from the heavy round of researching, because now we&rsquo;ll apply our new found knowledge to the two blocks.</p><h3 id=apply>Apply</h3><p><img src=media/SRECStruct.png alt="Wikipedia extract about S Records structure" loading=lazy>
+Based on the record structure shown, we can break each block into the appropriate records, and work from there:</p><p>Block 1:</p><section><table><thead><tr><th style=text-align:center>S</th><th style=text-align:center>Type</th><th style=text-align:center>Byte Count</th><th style=text-align:center>Address</th><th style=text-align:center>Data</th><th style=text-align:center>Checksum</th></tr></thead><tbody><tr><td style=text-align:center>S</td><td style=text-align:center>0</td><td style=text-align:center>0C</td><td style=text-align:center>0000</td><td style=text-align:center>4C6F63616C204B6579</td><td style=text-align:center>BF</td></tr><tr><td style=text-align:center>S</td><td style=text-align:center>2</td><td style=text-align:center>21</td><td style=text-align:center>020018</td><td style=text-align:center>423B165105BDAAFF27DB3B5D223497EA549FDC4D27330808F7F95D95B0</td><td style=text-align:center>EC</td></tr><tr><td style=text-align:center>S</td><td style=text-align:center>5</td><td style=text-align:center>03</td><td style=text-align:center>&mdash;</td><td style=text-align:center>0001</td><td style=text-align:center>FB</td></tr></tbody></table></section><p>Block 2:</p><section><table><thead><tr><th style=text-align:center>S</th><th style=text-align:center>Type</th><th style=text-align:center>Byte Count</th><th style=text-align:center>Address</th><th style=text-align:center>Data</th><th style=text-align:center>Checksum</th></tr></thead><tbody><tr><td style=text-align:center>S</td><td style=text-align:center>0</td><td style=text-align:center>21</td><td style=text-align:center>0000</td><td style=text-align:center>506F77657250432042696720456E6469616E2033322D4269742053747562</td><td style=text-align:center>0E</td></tr><tr><td style=text-align:center>S</td><td style=text-align:center>1</td><td style=text-align:center>23</td><td style=text-align:center>04EC</td><td style=text-align:center>9421FFD093E1002C7C3F0B78907F000C909F000839200000913F001C4800012C</td><td style=text-align:center>7E</td></tr><tr><td style=text-align:center>S</td><td style=text-align:center>1</td><td style=text-align:center>23</td><td style=text-align:center>050C</td><td style=text-align:center>813F001C552907FE2F890000409E0058813F001C815F000C7D2A4A1489290000</td><td style=text-align:center>FF</td></tr><tr><td style=text-align:center>S</td><td style=text-align:center>1</td><td style=text-align:center>23</td><td style=text-align:center>052C</td><td style=text-align:center>7D2A07743D20100281090018813F001C7D284A14892900003929FFFD5529063E</td><td style=text-align:center>C7</td></tr><tr><td style=text-align:center>S</td><td style=text-align:center>1</td><td style=text-align:center>23</td><td style=text-align:center>054C</td><td style=text-align:center>7D2907747D494A787D280774813F001C815F00087D2A4A14550A063E99490000</td><td style=text-align:center>74</td></tr><tr><td style=text-align:center>S</td><td style=text-align:center>1</td><td style=text-align:center>23</td><td style=text-align:center>056C</td><td style=text-align:center>480000BC815F001C3D205555612955567D0A48967D49FE707D2940501D290003</td><td style=text-align:center>17</td></tr><tr><td style=text-align:center>S</td><td style=text-align:center>1</td><td style=text-align:center>23</td><td style=text-align:center>058C</td><td style=text-align:center>7D2950502F890000409E0058813F001C815F000C7D2A4A14892900007D2A0774</td><td style=text-align:center>76</td></tr><tr><td style=text-align:center>S</td><td style=text-align:center>1</td><td style=text-align:center>23</td><td style=text-align:center>05AC</td><td style=text-align:center>3D20100281090018813F001C7D284A1489290000392900055529063E7D290774</td><td style=text-align:center>3F</td></tr><tr><td style=text-align:center>S</td><td style=text-align:center>1</td><td style=text-align:center>23</td><td style=text-align:center>05CC</td><td style=text-align:center>7D494A787D280774813F001C815F00087D2A4A14550A063E9949000048000040</td><td style=text-align:center>8D</td></tr><tr><td style=text-align:center>S</td><td style=text-align:center>1</td><td style=text-align:center>23</td><td style=text-align:center>05EC</td><td style=text-align:center>813F001C815F000C7D2A4A14890900003D20100281490018813F001C7D2A4A14</td><td style=text-align:center>5A</td></tr><tr><td style=text-align:center>S</td><td style=text-align:center>1</td><td style=text-align:center>23</td><td style=text-align:center>060C</td><td style=text-align:center>89490000813F001C80FF00087D274A147D0A5278554A063E99490000813F001C</td><td style=text-align:center>A1</td></tr><tr><td style=text-align:center>S</td><td style=text-align:center>1</td><td style=text-align:center>23</td><td style=text-align:center>062C</td><td style=text-align:center>39290001913F001C813F001C2F89001C409DFED0813F00083929001D39400000</td><td style=text-align:center>40</td></tr><tr><td style=text-align:center>S</td><td style=text-align:center>1</td><td style=text-align:center>1B</td><td style=text-align:center>064C</td><td style=text-align:center>9949000060000000397F003083EBFFFC7D615B784E800020</td><td style=text-align:center>60</td></tr><tr><td style=text-align:center>S</td><td style=text-align:center>5</td><td style=text-align:center>03</td><td style=text-align:center>&mdash;</td><td style=text-align:center>000C</td><td style=text-align:center>F0</td></tr></tbody></table></section><p>Now to analyse what each record means. Thankfully it&rsquo;s quite simple:</p><ul><li><code>S5</code> we can just ignore, since it only tells us how many S1/2/3 records there are (basically number of data records).</li><li>As mentioned above, <code>S1</code> and <code>S2</code> are data records, the only difference is that S2&rsquo;s address size is 6 bytes.</li><li><code>S0</code> is very helpful, as they&rsquo;re header records. It tells us information about each block. Given that each S0 record&rsquo;s data field looks very ASCII like, let&rsquo;s decode:<ul><li>Block 1: <code>Local Key</code></li><li>Block 2: <code>PowerPC Big Endian 32-Bit Stub</code></li></ul></li></ul><p>Very intriguing. There seems to be another key (that&rsquo;s separate to the key we got from key.sal), so we&rsquo;ll set that aside and take a look at block 2. It looks like there&rsquo;ll be at least a little PowerPC fun! Good thing I know a creature that knows PowerPC.</p><h2 id=the-programming-y-bits>The programming-y bits</h2><h3 id=loading-up-ghidra>Loading up Ghidra</h3><p>Now, reversing the hex codes to the appropriate machine code instructions by hand would be, to put it simply, complete insanity. Luckily Ghidra can help with not just the disassembly, but also the decompilation. This allows us to deal with PowerPC with little to no PowerPC knowledge.<br>Given that I know basically nothing about PowerPC, the decompiler thankfully gives plenty of information as to what&rsquo;s going on (I&rsquo;ve changed some variable names):</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-C data-lang=C><span style=display:flex><span><span style=color:#66d9ef>void</span> <span style=color:#a6e22e>UndefinedFunction_00000000</span>(<span style=color:#66d9ef>int</span> param_1,<span style=color:#66d9ef>int</span> param_2)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>  uint index;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>for</span> (index <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>; (<span style=color:#66d9ef>int</span>)index <span style=color:#f92672>&lt;</span> <span style=color:#ae81ff>0x1d</span>; index <span style=color:#f92672>=</span> index <span style=color:#f92672>+</span> <span style=color:#ae81ff>1</span>) {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> ((index <span style=color:#f92672>&amp;</span> <span style=color:#ae81ff>1</span>) <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span>) {
+</span></span><span style=display:flex><span>      <span style=color:#f92672>*</span>(byte <span style=color:#f92672>*</span>)(param_2 <span style=color:#f92672>+</span> index) <span style=color:#f92672>=</span>
+</span></span><span style=display:flex><span>           <span style=color:#f92672>*</span>(byte <span style=color:#f92672>*</span>)(param_1 <span style=color:#f92672>+</span> index) <span style=color:#f92672>^</span> <span style=color:#f92672>*</span>(<span style=color:#66d9ef>char</span> <span style=color:#f92672>*</span>)(local_key <span style=color:#f92672>+</span> index) <span style=color:#f92672>-</span> <span style=color:#ae81ff>3U</span>;
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>else</span> {
+</span></span><span style=display:flex><span>      <span style=color:#66d9ef>if</span> ((<span style=color:#66d9ef>int</span>)index <span style=color:#f92672>%</span> <span style=color:#ae81ff>3</span> <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span>) {
+</span></span><span style=display:flex><span>        <span style=color:#f92672>*</span>(byte <span style=color:#f92672>*</span>)(param_2 <span style=color:#f92672>+</span> index) <span style=color:#f92672>=</span>
+</span></span><span style=display:flex><span>             <span style=color:#f92672>*</span>(byte <span style=color:#f92672>*</span>)(param_1 <span style=color:#f92672>+</span> index) <span style=color:#f92672>^</span> <span style=color:#f92672>*</span>(<span style=color:#66d9ef>char</span> <span style=color:#f92672>*</span>)(local_key <span style=color:#f92672>+</span> index) <span style=color:#f92672>+</span> <span style=color:#ae81ff>5U</span>;
+</span></span><span style=display:flex><span>      }
+</span></span><span style=display:flex><span>      <span style=color:#66d9ef>else</span> {
+</span></span><span style=display:flex><span>        <span style=color:#f92672>*</span>(byte <span style=color:#f92672>*</span>)(param_2 <span style=color:#f92672>+</span> index) <span style=color:#f92672>=</span>
+</span></span><span style=display:flex><span>             <span style=color:#f92672>*</span>(byte <span style=color:#f92672>*</span>)(param_1 <span style=color:#f92672>+</span> index) <span style=color:#f92672>^</span> <span style=color:#f92672>*</span>(byte <span style=color:#f92672>*</span>)(local_key <span style=color:#f92672>+</span> index);
+</span></span><span style=display:flex><span>      }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>  <span style=color:#f92672>*</span>(undefined <span style=color:#f92672>*</span>)(param_2 <span style=color:#f92672>+</span> <span style=color:#ae81ff>0x1d</span>) <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>;
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>return</span>;
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>Taking a look at this, it seems to XOR (^) each byte of param_1 against the local key (with some small adding/subtracting depending on the index) and stores it in param_2. Clearly, param_1 is where the key from key.sal comes in and param_2 should hopefully be the flag.</p><h3 id=trust-the-python>Trust the python</h3><p>All that needs to be done is to plug the keys into the C code and hopefully get the flag. But for whatever reason, my brain decided it wanted to work with snakes instead.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-py data-lang=py><span style=display:flex><span>key <span style=color:#f92672>=</span> [<span style=color:#ae81ff>0x59</span>, <span style=color:#ae81ff>0x57</span>, <span style=color:#ae81ff>0x72</span>, <span style=color:#ae81ff>0x31</span>, <span style=color:#ae81ff>0x79</span>, <span style=color:#ae81ff>0xCE</span>, <span style=color:#ae81ff>0x94</span>, <span style=color:#ae81ff>0x8D</span>, <span style=color:#ae81ff>0x15</span>, <span style=color:#ae81ff>0xD4</span>, <span style=color:#ae81ff>0x54</span>, <span style=color:#ae81ff>0x02</span>, <span style=color:#ae81ff>0x7C</span>, <span style=color:#ae81ff>0x5C</span>, <span style=color:#ae81ff>0xA0</span>, <span style=color:#ae81ff>0x83</span>, <span style=color:#ae81ff>0x3D</span>, <span style=color:#ae81ff>0xAC</span>, <span style=color:#ae81ff>0xB7</span>, <span style=color:#ae81ff>0x2A</span>, <span style=color:#ae81ff>0x17</span>, <span style=color:#ae81ff>0x67</span>, <span style=color:#ae81ff>0x76</span>, <span style=color:#ae81ff>0x38</span>, <span style=color:#ae81ff>0x98</span>, <span style=color:#ae81ff>0x8F</span>, <span style=color:#ae81ff>0x69</span>, <span style=color:#ae81ff>0xE8</span>, <span style=color:#ae81ff>0xD0</span>]
+</span></span><span style=display:flex><span>local <span style=color:#f92672>=</span> [<span style=color:#ae81ff>0x42</span>, <span style=color:#ae81ff>0x3B</span>, <span style=color:#ae81ff>0x16</span>, <span style=color:#ae81ff>0x51</span>, <span style=color:#ae81ff>0x05</span>, <span style=color:#ae81ff>0xBD</span>, <span style=color:#ae81ff>0xAA</span>, <span style=color:#ae81ff>0xFF</span>, <span style=color:#ae81ff>0x27</span>, <span style=color:#ae81ff>0xDB</span>, <span style=color:#ae81ff>0x3B</span>, <span style=color:#ae81ff>0x5D</span>, <span style=color:#ae81ff>0x22</span>, <span style=color:#ae81ff>0x34</span>, <span style=color:#ae81ff>0x97</span>, <span style=color:#ae81ff>0xEA</span>, <span style=color:#ae81ff>0x54</span>, <span style=color:#ae81ff>0x9F</span>, <span style=color:#ae81ff>0xDC</span>, <span style=color:#ae81ff>0x4D</span>, <span style=color:#ae81ff>0x27</span>, <span style=color:#ae81ff>0x33</span>, <span style=color:#ae81ff>0x08</span>, <span style=color:#ae81ff>0x08</span>, <span style=color:#ae81ff>0xF7</span>, <span style=color:#ae81ff>0xF9</span>, <span style=color:#ae81ff>0x5D</span>, <span style=color:#ae81ff>0x95</span>, <span style=color:#ae81ff>0xB0</span>]
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>flag <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>for</span> i <span style=color:#f92672>in</span> range(<span style=color:#ae81ff>29</span>):
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> (i <span style=color:#f92672>&amp;</span> <span style=color:#ae81ff>1</span>) <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span>:
+</span></span><span style=display:flex><span>         flag <span style=color:#f92672>+=</span> chr((key[i] <span style=color:#f92672>^</span> local[i]<span style=color:#f92672>-</span><span style=color:#ae81ff>3</span>))
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>elif</span> (i <span style=color:#f92672>%</span> <span style=color:#ae81ff>3</span>) <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span>:
+</span></span><span style=display:flex><span>         flag <span style=color:#f92672>+=</span> chr((key[i] <span style=color:#f92672>^</span> local[i]<span style=color:#f92672>+</span><span style=color:#ae81ff>5</span>))
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>else</span>:
+</span></span><span style=display:flex><span>         flag <span style=color:#f92672>+=</span> chr(key[i] <span style=color:#f92672>^</span> local[i])
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>print(flag)
+</span></span></code></pre></div><p>In the end, we finally get the flag we&rsquo;re after!</p><pre tabindex=0><code>Flag: flag{s3r14l_ch4ll3ng3_s0lv3r}
+</code></pre></article></main></div></body></html>

