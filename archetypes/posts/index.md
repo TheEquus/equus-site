@@ -1,7 +1,7 @@
 ---
 title: ""
 description: ""
-date: {{ .Date }}
+date: {{ time.Format "2 Jan 2006" .Date }}
 draft: true
 toc: true
 categories: [""]
