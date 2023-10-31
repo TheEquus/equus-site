@@ -1,7 +1,7 @@
 ---
 title: "Equus 🐴"
 draft: false
-heading: "A compsci grad doing random things"
+heading: "Random things happen I guess"
 ---
 
-This site features CTF writeups as well as whatever random project I've decided to do and write about
+This site features whatever random project I've decided to do and write about.
