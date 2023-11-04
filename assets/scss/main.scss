@@ -102,6 +102,14 @@ article {
 
   p {
     margin: 1.5rem 0;
+
+    strong {
+      color: $main-colour;
+    }
+
+    code {
+      color: $main-colour;
+    }
   }
 
   ol, ul {
