@@ -25,16 +25,18 @@
 
 {{ else }}
 <meta name="description" content="{{ .Params.description }}">
-<!-- Open Graph things -->
+<!-- Fancy card things -->
 <meta property="og:title" content="{{ .Title }}">
 <meta property="og:description" content="{{ .Params.description }}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ .Title }}">
 {{if .Params.cover }}
 {{ $mediaPath := path.Join .Permalink (.Page.Param "mediaPath") }}
 {{ $cover := path.Join $mediaPath .Params.cover }}
 <meta property="og:image" content="{{ $cover }}">
+<meta name="twitter:image" content="{{ $cover }}">
 {{ end }}
 <meta property="og:url" content="{{ .Permalink }}">
-<meta name="twitter:card" content="summary_large_image">
 <title>{{ .Title | emojify }}</title>
 <link rel="canonical" href="{{ .Permalink }}">
 {{ end }}
