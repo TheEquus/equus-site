@@ -34,8 +34,8 @@
 <meta name="twitter:site" content="@ThatEquus">
 <meta name="twitter:creator" content="@ThatEquus">
 {{if .Params.cover }}
-{{ $mediaPath := path.Join .Permalink (.Page.Param "mediaPath") }}
-{{ $cover := path.Join $mediaPath .Params.cover }}
+{{ $mediaPath := urls.JoinPath .Permalink (.Page.Param "mediaPath") }}
+{{ $cover := urls.JoinPath $mediaPath .Params.cover }}
 {{ $image := .Resources.GetMatch (path.Join (.Page.Param "mediaPath") .Params.cover) }}
 <meta property="og:image" content="{{ $cover }}">
 <meta property="og:image:width" content="{{ $image.Width }}">
