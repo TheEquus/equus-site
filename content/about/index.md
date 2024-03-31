@@ -5,11 +5,8 @@ draft: False
 index: False
 ---
 
-Hi I'm Annie Nie, and I do random computer things (except when I'm not).  
+Hi I'm Annie Nie, and I do random things.
 
 CTF-ing with {{< externalLink "skateboarding dog" "https://ctftime.org/team/140575" >}}🛹🐶.
 
-Find me through the following links:
-- {{< externalLink "Twitter" "https://twitter.com/ThatEquus" >}}
-- {{< externalLink "Github" "https://github.com/TheEquus" >}}
-- {{< externalLink "LinkedIn" "https://www.linkedin.com/in/annienie/" >}}
+Contact me on {{< externalLink "LinkedIn" "https://www.linkedin.com/in/annienie/" >}}, {{< externalLink "X" "https://twitter.com/ThatEquus" >}} or chuck an email me[at]anniequus[.]com
